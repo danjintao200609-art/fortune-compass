@@ -1,7 +1,18 @@
 // 从后端API获取认证服务
 
-// Base API URL is relative because of Vite proxy configuration in vite.config.ts
-const API_BASE = '/api';
+// API基础URL - 支持环境变量配置
+// 开发环境使用代理路径 /api
+// 生产环境需要配置绝对路径
+const getApiBase = (): string => {
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  if (envApiUrl) {
+    return envApiUrl;
+  }
+  // 默认使用代理路径（本地开发）
+  return '/api';
+};
+
+const API_BASE = getApiBase();
 
 export interface AuthUser {
     id: string;

@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
     define: {
       // 使用import.meta.env访问环境变量，避免process未定义错误
       'import.meta.env.VITE_LAF_APP_ID': JSON.stringify(env.VITE_LAF_APP_ID),
+      'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL),
     },
     resolve: {
       alias: {

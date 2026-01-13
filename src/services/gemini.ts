@@ -1,8 +1,15 @@
 import { UserConfig, FortuneMode, FortuneResult } from '../../types';
 
-// The frontend service now delegates to the backend API via the Vite proxy.
-// Base API URL is relative because of Vite proxy configuration in vite.config.ts
-const API_BASE = '/api';
+// API基础URL - 支持环境变量配置
+const getApiBase = (): string => {
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  if (envApiUrl) {
+    return envApiUrl;
+  }
+  return '/api';
+};
+
+const API_BASE = getApiBase();
 
 // Helper to get auth headers
 const getAuthHeaders = async (): Promise<HeadersInit> => {
