@@ -1,0 +1,15 @@
+{
+  "build": {
+    "command": "npm run build",
+    "output_dir": "dist"
+  },
+  "run": {
+    "command": "npm run preview",
+    "port": 4173
+  },
+  "env": {
+    "VITE_SUPABASE_URL": "https://vmnzlweewtzadycwnojg.supabase.co",
+    "VITE_SUPABASE_KEY": "sb_publishable_WzU9-gRbJU2_g3A6nuPClA_YmcYUGY9",
+    "AI_SERVICE_TYPE": "doubao"
+  }
+}

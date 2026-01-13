@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, process.cwd(), 'VITE_');
   return {
     server: {
       host: '0.0.0.0', // 监听所有网络接口，包括 IPv4
@@ -17,7 +17,9 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react()],
     define: {
-      // 移除process.env定义，避免浏览器环境中出现process未定义错误
+      // 使用import.meta.env访问环境变量，避免process未定义错误
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
+      'import.meta.env.VITE_SUPABASE_KEY': JSON.stringify(env.VITE_SUPABASE_KEY),
     },
     resolve: {
       alias: {
