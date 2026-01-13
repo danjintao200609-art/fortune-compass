@@ -43,3 +43,14 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
 
 // 导出 app 供 Vercel 使用
 export default app;
+
+// 导出 handler 供云函数使用 (腾讯云函数、阿里云函数计算等)
+export const handler = (req: any, res: any) => {
+  // 云函数环境下的请求处理
+  if (req.apiGateway || req.headers['x-apigateway-event']) {
+    // 兼容 API Gateway 事件格式
+    return app(req, res);
+  }
+  // 常规 HTTP 请求处理
+  return app(req, res);
+};
