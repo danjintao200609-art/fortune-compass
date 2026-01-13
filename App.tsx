@@ -6,7 +6,7 @@ import VIP from './pages/VIP';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import * as api from "@/services/gemini";
+import * as api from "@/services/auth";
 import * as auth from "./src/services/auth";
 
 const App: React.FC = () => {
