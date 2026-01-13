@@ -31,17 +31,18 @@ app.use('/api/auth', authRoutes);
 // 挂载运势接口
 app.use('/api', fortuneRoutes);
 
-// 只在非 Vercel 环境下启动服务器
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+// 在 Zeabur/独立服务器环境下启动服务器（Vercel 使用 serverless 函数）
+if (!process.env.VERCEL) {
   app.listen(PORT, '0.0.0.0', async () => {
     console.log(`=========================================`);
     console.log(`🚀 后端服务启动成功！`);
     console.log(`🔗 地址: http://localhost:${PORT}`);
     console.log(`⏰ 时间: ${new Date().toLocaleString()}`);
-    
+    console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
+
     // 异步测试数据库连接
     await testDatabaseConnection();
-    
+
     console.log(`=========================================`);
   });
 }
