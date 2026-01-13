@@ -9,10 +9,6 @@
   },
   "env": {
     "NODE_ENV": "production",
-    "PORT": "3001",
-    "DATABASE_URL": "postgresql://postgres:dpzhsbq6@dbconn.sealosbja.site:43584/postgres",
-    "FRONTEND_URL": "https://fortune-compass.zeabur.app",
-    "JWT_SECRET": "fortune-compass-secret-key-2026-change-this-in-production",
     "AI_SERVICE_TYPE": "doubao"
   }
 }
