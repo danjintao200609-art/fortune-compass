@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>兄弟运势测评</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: {
+              50: "#FCF9E8",
+              100: "#F9F1C8",
+              200: "#F2DF8E",
+              300: "#ECC813",
+              400: "#D4AF37",
+              500: "#B38F1D",
+              600: "#8C6E12",
+              900: "#453405",
+            },
+            charcoal: {
+              950: "#0a0a0c",
+              900: "#141417",
+              800: "#1e1e24",
+              700: "#2a2a35",
+            },
+            primary: "#10B981",
+            "holo-cyan": "#06b6d4",
+          },
+          fontFamily: {
+            sans: ["Noto Sans SC", "sans-serif"],
+            serif: ["Noto Serif SC", "serif"],
+          },
+          backgroundImage: {
+            'mystic-texture': "radial-gradient(circle at 15% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 25%), radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05) 0%, transparent 25%)",
+            'gold-gradient': "linear-gradient(135deg, #ECC813 0%, #D4AF37 50%, #B38F1D 100%)",
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0a0a0c;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    .stars {
+      background-image: 
+        radial-gradient(1px 1px at 20px 30px, #eee, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 50px 160px, #ddd, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0));
+      background-repeat: repeat;
+      background-size: 200px 200px;
+      opacity: 0.15;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .material-symbols-outlined.filled {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Hide scrollbars */
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Mystical Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+      50% { transform: translateY(-40px) scale(1.5); opacity: 0.8; }
+    }
+    .animate-float {
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse-gold {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5)); }
+      50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.8)); }
+    }
+    .animate-pulse-gold {
+      animation: pulse-gold 2s ease-in-out infinite;
+    }
+
+    @keyframes rotate-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-rotate-slow {
+      animation: rotate-slow 12s linear infinite;
+    }
+    .animate-rotate-slow-reverse {
+      animation: rotate-slow 20s linear infinite reverse;
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-charcoal-950 text-gray-100 font-sans antialiased">
+  <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

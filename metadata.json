@@ -1,0 +1,8 @@
+
+{
+  "name": "运势指南针 (Fortune Compass)",
+  "description": "A mystical AI-powered fortune-telling app that helps users find their best directions, lucky colors, and daily predictions using professional Feng Shui and astrological insights.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
