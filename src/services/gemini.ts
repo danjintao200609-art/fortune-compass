@@ -161,11 +161,34 @@ export const interpretDream = async (dream: string): Promise<string> => {
             headers: getAuthHeaders(),
             body: JSON.stringify({ dream }),
         });
+
+        if (!response.ok) {
+            // 尝试获取错误信息
+            let errorMessage = '解析梦境失败';
+            let errorData = null;
+            try {
+                errorData = await response.json();
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                // 如果无法解析错误信息，使用HTTP状态码作为参考
+                if (response.status === 401) {
+                    errorMessage = '未登录，请先登录';
+                } else if (response.status >= 500) {
+                    errorMessage = '服务器繁忙，请稍后再试';
+                }
+            }
+            return errorMessage;
+        }
+
         const data = await response.json();
         return data.result;
     } catch (error) {
         console.error("API Error:", error);
-        return "网络连接异常，请稍后再试。";
+        // 根据错误类型返回更准确的提示
+        if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
+            return "网络连接异常，请稍后再试。";
+        }
+        return "服务暂时不可用，请稍后再试。";
     }
 };
 
@@ -174,9 +197,40 @@ export const getOutfitSuggestion = async (): Promise<{ colors: string[], accesso
         const response = await fetch(`${API_BASE}/outfit`, {
             headers: getAuthHeaders(),
         });
+
+        if (!response.ok) {
+            // 尝试获取错误信息
+            let errorMessage = '获取穿搭建议失败';
+            let errorData = null;
+            try {
+                errorData = await response.json();
+                // 如果返回了模拟数据，直接使用
+                if (errorData?.colors && errorData?.accessory && errorData?.quote) {
+                    console.warn('⚠️ 使用后端返回的模拟穿搭数据');
+                    return errorData;
+                }
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                // 如果无法解析错误信息，使用HTTP状态码作为参考
+                if (response.status === 401) {
+                    console.warn('⚠️ 未登录，使用前端模拟穿搭数据');
+                } else if (response.status >= 500) {
+                    console.warn('⚠️ 服务器错误，使用前端模拟穿搭数据');
+                }
+            }
+            // 返回模拟数据，避免UI崩溃
+            return { colors: ["正红色", "亮金色"], accessory: "玉石挂件", quote: "鸿运当头，顺风顺水。" };
+        }
+
         return await response.json();
     } catch (error) {
         console.error("API Error:", error);
-        return { colors: ["正红色", "亮金色"], accessory: "玉石挂件", quote: "鸿运当头，顺风顺水。" };
+        // 返回模拟数据，避免前端卡死
+        console.warn('⚠️ 使用前端模拟穿搭数据');
+        return {
+            colors: ["正红色", "亮金色"],
+            accessory: "玉石挂件",
+            quote: "鸿运当头，顺风顺水。"
+        };
     }
 };
