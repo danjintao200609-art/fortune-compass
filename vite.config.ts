@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
       port: 5173, // 前端固定在 5173
       proxy: {
         '/api': {
-          target: 'http://localhost:3001', // 将所有 API 请求转给 3001 端口的后端
+          target: 'http://localhost:3000', // 将所有 API 请求转给 3000 端口的后端
           changeOrigin: true,
         }
       }

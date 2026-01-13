@@ -45,16 +45,16 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
     console.log(`[更新个人资料] 用户ID: ${userId}, 数据:`, updates);
 
     try {
-        const { birthday, gender, nickname, avatar_url } = updates;
+        const { birthday, gender, nickname, avatar_url, signature } = updates;
         
         // 使用 upsert (INSERT ... ON CONFLICT DO UPDATE) 语法
         const result = await pool.query(
-            `INSERT INTO profiles (id, birthday, gender, nickname, avatar_url, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO profiles (id, birthday, gender, nickname, avatar_url, signature, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              ON CONFLICT (id)
-             DO UPDATE SET birthday = $2, gender = $3, nickname = $4, avatar_url = $5, updated_at = $6
+             DO UPDATE SET birthday = $2, gender = $3, nickname = $4, avatar_url = $5, signature = $6, updated_at = $7
              RETURNING *`,
-            [userId, birthday, gender, nickname, avatar_url, new Date().toISOString()]
+            [userId, birthday, gender, nickname, avatar_url, signature, new Date().toISOString()]
         );
 
         console.log('[更新个人资料] 成功:', result.rows[0]);

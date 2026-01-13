@@ -143,3 +143,58 @@ export const isAuthenticated = async (): Promise<boolean> => {
     const user = await verifyToken();
     return !!user;
 };
+
+// 获取用户个人资料
+export const getProfile = async (userId: string): Promise<any | null> => {
+    try {
+        const token = getToken();
+        if (!token) {
+            return null;
+        }
+
+        const response = await fetch(`${API_BASE}/profile`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('获取个人资料错误:', error);
+        return null;
+    }
+};
+
+// 更新用户个人资料
+export const updateProfile = async (userId: string, profileData: any): Promise<any | null> => {
+    try {
+        const token = getToken();
+        if (!token) {
+            return null;
+        }
+
+        const response = await fetch(`${API_BASE}/profile`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(profileData)
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('更新个人资料错误:', error);
+        return null;
+    }
+};

@@ -6,7 +6,6 @@ import VIP from './pages/VIP';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import * as api from "@/services/auth";
 import * as auth from "./src/services/auth";
 
 const App: React.FC = () => {
@@ -52,7 +51,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!isAuthenticated || !currentUser) return;
 
-    api.getProfile(currentUser.id).then(data => {
+    auth.getProfile(currentUser.id).then(data => {
       if (data) {
         setProfileData({
           nickname: data.nickname || currentUser.username || '运势达人',
@@ -76,14 +75,14 @@ const App: React.FC = () => {
       const user = auth.getCurrentUser();
       if (user) {
         setCurrentUser(user);
-        return await api.updateProfile(user.id, newData);
+        return await auth.updateProfile(user.id, newData);
       }
       console.error("无法更新资料：未找到当前用户");
       return null;
     }
 
     setProfileData(newData);
-    return await api.updateProfile(currentUser.id, {
+    return await auth.updateProfile(currentUser.id, {
       nickname: newData.nickname,
       birthday: newData.birthday,
       gender: newData.gender,
