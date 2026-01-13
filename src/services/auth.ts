@@ -1,13 +1,8 @@
-// import { supabase } from '../lib/supabase'
-// 临时模拟实现，避免构建失败
-const supabase = {
-  auth: {
-    signUp: async () => ({ data: null, error: new Error('暂未实现') }),
-    signInWithPassword: async () => ({ data: null, error: new Error('暂未实现') }),
-    signOut: async () => ({}),
-    getSession: async () => ({ data: { session: null }, error: null }),
-  }
-} as any;
+// 临时本地认证模拟实现
+// 实际项目中应使用后端API进行认证
+
+// 模拟用户数据库
+const mockUsers: Map<string, { id: string; username: string; email: string; phone?: string; password: string }> = new Map();
 
 export interface AuthUser {
     id: string;
@@ -31,34 +26,47 @@ export interface LoginData {
 // 注册
 export const register = async (data: RegisterData): Promise<{ user: AuthUser; token: string } | { error: string }> => {
     try {
-        // 使用 Supabase Auth 注册
-        const { data: authData, error } = await supabase.auth.signUp({
-            email: data.email!,
-            password: data.password,
-            options: {
-                data: {
-                    username: data.username
-                }
+        // 验证必填字段
+        if (!data.email && !data.phone) {
+            return { error: '请提供邮箱或手机号' };
+        }
+
+        // 检查用户是否已存在
+        for (const user of mockUsers.values()) {
+            if (user.email === data.email || user.phone === data.phone) {
+                return { error: '该邮箱或手机号已被注册' };
             }
-        })
-
-        if (error) {
-            return { error: error.message || '注册失败' };
         }
 
-        if (!authData.user || !authData.session) {
-            return { error: '注册失败，请稍后重试' };
-        }
-
-        const user: AuthUser = {
-            id: authData.user.id,
+        // 创建新用户
+        const userId = Math.random().toString(36).substr(2, 9);
+        const newUser = {
+            id: userId,
             username: data.username,
-            email: authData.user.email
+            email: data.email || '',
+            phone: data.phone,
+            password: data.password // 实际项目中应使用密码哈希
         };
 
+        // 保存用户到模拟数据库
+        mockUsers.set(userId, newUser);
+
+        // 生成模拟token
+        const token = `mock-token-${userId}`;
+
+        // 保存到localStorage
+        localStorage.setItem('user_id', userId);
+        localStorage.setItem('auth-token', token);
+        localStorage.setItem(`user-${userId}`, JSON.stringify(newUser));
+
         return {
-            user,
-            token: authData.session.access_token
+            user: {
+                id: userId,
+                username: data.username,
+                email: data.email,
+                phone: data.phone
+            },
+            token: token
         };
     } catch (error) {
         console.error('注册错误:', error);
@@ -69,29 +77,40 @@ export const register = async (data: RegisterData): Promise<{ user: AuthUser; to
 // 登录
 export const login = async (data: LoginData): Promise<{ user: AuthUser; token: string } | { error: string }> => {
     try {
-        // 使用 Supabase Auth 登录
-        const { data: authData, error } = await supabase.auth.signInWithPassword({
-            email: data.identifier,
-            password: data.password
-        })
-
-        if (error) {
-            return { error: error.message || '登录失败' };
+        // 查找用户
+        let user = null;
+        for (const u of mockUsers.values()) {
+            if (u.email === data.identifier || u.phone === data.identifier) {
+                user = u;
+                break;
+            }
         }
 
-        if (!authData.user || !authData.session) {
-            return { error: '登录失败，请检查用户名和密码' };
+        if (!user) {
+            return { error: '用户名或密码错误' };
         }
 
-        const user: AuthUser = {
-            id: authData.user.id,
-            username: authData.user.user_metadata?.username || authData.user.email?.split('@')[0] || 'User',
-            email: authData.user.email
-        };
+        // 验证密码
+        if (user.password !== data.password) {
+            return { error: '用户名或密码错误' };
+        }
+
+        // 生成模拟token
+        const token = `mock-token-${user.id}`;
+
+        // 保存到localStorage
+        localStorage.setItem('user_id', user.id);
+        localStorage.setItem('auth-token', token);
+        localStorage.setItem(`user-${user.id}`, JSON.stringify(user));
 
         return {
-            user,
-            token: authData.session.access_token
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                phone: user.phone
+            },
+            token: token
         };
     } catch (error) {
         console.error('登录错误:', error);
@@ -101,61 +120,49 @@ export const login = async (data: LoginData): Promise<{ user: AuthUser; token: s
 
 // 登出
 export const logout = async (): Promise<void> => {
-    await supabase.auth.signOut();
+    // 清除localStorage中的认证信息
+    const userId = localStorage.getItem('user_id');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('auth-token');
+    if (userId) {
+        localStorage.removeItem(`user-${userId}`);
+    }
 };
 
 // 获取当前 token
 export const getToken = (): string | null => {
-    // Supabase 会自动管理 token，但我们提供这个方法保持兼容性
-    return localStorage.getItem('supabase.auth.token') || null;
+    return localStorage.getItem('auth-token') || null;
 };
 
-// 获取当前用户 (同步获取可能不准确，建议使用 verifyToken)
+// 获取当前用户 (同步获取)
 export const getCurrentUser = (): AuthUser | null => {
-    // 遍历 localStorage 找到 Supabase 的 key
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.includes('auth-token') && (key.startsWith('sb-') || key.startsWith('supabase.'))) {
-            const sessionStr = localStorage.getItem(key);
-            if (sessionStr) {
-                try {
-                    const session = JSON.parse(sessionStr);
-                    const user = session.user || session;
-                    if (user && user.id) {
-                        return {
-                            id: user.id,
-                            username: user.user_metadata?.username || user.email?.split('@')[0] || 'User',
-                            email: user.email
-                        };
-                    }
-                } catch (e) { }
-            }
-        }
-    }
-    return null;
-};
-
-
-// 验证 token 是否有效
-export const verifyToken = async (): Promise<AuthUser | null> => {
     try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (error || !session) {
+        const userId = localStorage.getItem('user_id');
+        if (!userId) {
             return null;
         }
 
-        const user: AuthUser = {
-            id: session.user.id,
-            username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'User',
-            email: session.user.email
-        };
+        const userStr = localStorage.getItem(`user-${userId}`);
+        if (!userStr) {
+            return null;
+        }
 
-        return user;
+        const user = JSON.parse(userStr);
+        return {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            phone: user.phone
+        };
     } catch (error) {
-        console.error('Token验证错误:', error);
+        console.error('获取当前用户错误:', error);
         return null;
     }
+};
+
+// 验证 token 是否有效
+export const verifyToken = async (): Promise<AuthUser | null> => {
+    return getCurrentUser();
 };
 
 // 检查是否已登录
