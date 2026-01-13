@@ -28,13 +28,21 @@ const Settings: React.FC<SettingsProps> = ({ navigateTo, profileData, setProfile
   });
   const [language, setLanguage] = useState<'zh-CN' | 'zh-TW' | 'en'>('zh-CN');
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     setIsSaving(true);
-    // Simulate API call delay for mystical feedback
-    setTimeout(() => {
+    try {
+      // 调用父组件传入的 setProfileData，它会保存到数据库
+      await setProfileData(profileData);
+      // 延迟一点时间显示保存动画
+      setTimeout(() => {
+        setIsSaving(false);
+        setCurrentView('main');
+      }, 800);
+    } catch (error) {
+      console.error('保存失败:', error);
       setIsSaving(false);
-      setCurrentView('main');
-    }, 1200);
+      alert('保存失败，请重试');
+    }
   };
 
   const renderHeader = (title: string, onBack: () => void) => (

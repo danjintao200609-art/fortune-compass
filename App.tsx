@@ -76,7 +76,8 @@ const App: React.FC = () => {
     api.updateProfile(currentUser.id, {
       nickname: newData.nickname,
       birthday: newData.birthday,
-      gender: newData.gender
+      gender: newData.gender,
+      signature: newData.signature
     });
   };
 
