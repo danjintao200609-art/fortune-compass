@@ -6,66 +6,56 @@ import { supabase } from '../lib/supabase';
 const API_BASE = '/api';
 
 // Helper to get auth headers
-const getAuthHeaders = (): HeadersInit => {
-    // 优先从 Supabase 会话中获取 token
-    let token = null;
-    
-    // 遍历 localStorage 找到 Supabase 的 token
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.includes('auth-token') && (key.startsWith('sb-') || key.startsWith('supabase.'))) {
-            const sessionStr = localStorage.getItem(key);
-            if (sessionStr) {
-                try {
-                    const session = JSON.parse(sessionStr);
-                    token = session.access_token || session.token;
-                    break;
-                } catch (e) {
-                    console.error('解析 token 失败:', e);
-                }
-            }
-        }
-    }
-    
-    // 兼容旧的 auth_token 存储
-    if (!token) {
-        token = localStorage.getItem('auth_token');
-    }
-    
+const getAuthHeaders = async (): Promise<HeadersInit> => {
     const headers: HeadersInit = {
         'Content-Type': 'application/json',
     };
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+    
+    try {
+        console.log('[getAuthHeaders] 开始获取认证头');
+        
+        // 使用 Supabase 客户端获取当前会话
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+            console.error('[getAuthHeaders] 获取会话失败:', error);
+            return headers;
+        }
+        
+        if (session && session.access_token) {
+            console.log('[getAuthHeaders] 从Supabase会话获取到token:', session.access_token);
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        } else {
+            console.warn('[getAuthHeaders] 未找到有效的认证token');
+        }
+        
+        return headers;
+    } catch (error) {
+        console.error('[getAuthHeaders] 发生错误:', error);
+        return headers;
     }
-    return headers;
 };
 
 // --- Profile Services ---
-// Note: We still use localStorage for profile persistence on the client side for speed,
-// or we can defer to the backend profile endpoints if we want full synchronization.
-// Given the user asked to check backend api.ts which had fetch('/api/profile'), 
-// we should probably use the backend for profile too if available.
-// However, to ensure stability, let's look at what server/src/services/api.ts did.
-// It did: fetch(`${API_BASE}/profile`).
-// So we will replicate that here.
-
+// 使用后端API获取和更新用户资料，确保安全性和正确性
 export const getProfile = async (userId: string) => {
     try {
         console.log('[getProfile] 正在获取用户资料...');
+        
+        const headers = await getAuthHeaders();
 
-        // 直接使用 Supabase SDK 查询
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
+        // 使用后端API获取用户资料
+        const response = await fetch(`${API_BASE}/profile`, {
+            method: 'GET',
+            headers: headers,
+        });
 
-        if (error) {
-            console.error('[getProfile] 请求失败:', error.message);
+        if (!response.ok) {
+            console.error('[getProfile] 请求失败:', response.statusText);
             return null;
         }
 
+        const data = await response.json();
         console.log('[getProfile] 成功获取:', data);
         return data;
     } catch (e) {
@@ -77,27 +67,22 @@ export const getProfile = async (userId: string) => {
 export const updateProfile = async (userId: string, data: any) => {
     try {
         console.log('[updateProfile] 正在保存资料:', data);
+        
+        const headers = await getAuthHeaders();
 
-        // 使用 upsert 方法：如果记录不存在就插入，存在就更新
-        const { data: result, error } = await supabase
-            .from('profiles')
-            .upsert({
-                id: userId,
-                nickname: data.nickname,
-                gender: data.gender,
-                birthday: data.birthday,
-                signature: data.signature
-            }, {
-                onConflict: 'id'
-            })
-            .select()
-            .single();
+        // 使用后端API更新用户资料
+        const response = await fetch(`${API_BASE}/profile`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(data),
+        });
 
-        if (error) {
-            console.error('[updateProfile] 保存失败:', error.message);
+        if (!response.ok) {
+            console.error('[updateProfile] 保存失败:', response.statusText);
             return null;
         }
 
+        const result = await response.json();
         console.log('[updateProfile] 保存成功:', result);
         return result;
     } catch (e) {
@@ -110,9 +95,10 @@ export const updateProfile = async (userId: string, data: any) => {
 
 export const generateFortune = async (config: UserConfig, mode: FortuneMode = 'fengshui'): Promise<FortuneResult> => {
     try {
+        const headers = await getAuthHeaders();
         const response = await fetch(`${API_BASE}/fortune`, {
             method: 'POST',
-            headers: getAuthHeaders(),
+            headers: headers,
             body: JSON.stringify({ config, mode }),
         });
 
@@ -156,20 +142,27 @@ export const generateFortune = async (config: UserConfig, mode: FortuneMode = 'f
 
 export const interpretDream = async (dream: string): Promise<string> => {
     try {
+        const headers = await getAuthHeaders();
+        console.log('[interpretDream] 调用API，dream:', dream, 'headers:', headers);
+        
         const response = await fetch(`${API_BASE}/dream`, {
             method: 'POST',
-            headers: getAuthHeaders(),
+            headers: headers,
             body: JSON.stringify({ dream }),
         });
 
+        console.log('[interpretDream] API响应状态:', response.status);
+        
         if (!response.ok) {
             // 尝试获取错误信息
             let errorMessage = '解析梦境失败';
             let errorData = null;
             try {
                 errorData = await response.json();
+                console.log('[interpretDream] API错误响应:', errorData);
                 errorMessage = errorData.error || errorMessage;
             } catch (e) {
+                console.error('[interpretDream] 解析错误响应失败:', e);
                 // 如果无法解析错误信息，使用HTTP状态码作为参考
                 if (response.status === 401) {
                     errorMessage = '未登录，请先登录';
@@ -181,9 +174,10 @@ export const interpretDream = async (dream: string): Promise<string> => {
         }
 
         const data = await response.json();
+        console.log('[interpretDream] API成功响应:', data);
         return data.result;
     } catch (error) {
-        console.error("API Error:", error);
+        console.error("[interpretDream] API调用异常:", error);
         // 根据错误类型返回更准确的提示
         if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
             return "网络连接异常，请稍后再试。";
@@ -194,16 +188,22 @@ export const interpretDream = async (dream: string): Promise<string> => {
 
 export const getOutfitSuggestion = async (): Promise<{ colors: string[], accessory: string, quote: string }> => {
     try {
+        const headers = await getAuthHeaders();
+        console.log('[getOutfitSuggestion] 调用API，headers:', headers);
+        
         const response = await fetch(`${API_BASE}/outfit`, {
-            headers: getAuthHeaders(),
+            headers: headers,
         });
 
+        console.log('[getOutfitSuggestion] API响应状态:', response.status);
+        
         if (!response.ok) {
             // 尝试获取错误信息
             let errorMessage = '获取穿搭建议失败';
             let errorData = null;
             try {
                 errorData = await response.json();
+                console.log('[getOutfitSuggestion] API错误响应:', errorData);
                 // 如果返回了模拟数据，直接使用
                 if (errorData?.colors && errorData?.accessory && errorData?.quote) {
                     console.warn('⚠️ 使用后端返回的模拟穿搭数据');
@@ -211,6 +211,7 @@ export const getOutfitSuggestion = async (): Promise<{ colors: string[], accesso
                 }
                 errorMessage = errorData.error || errorMessage;
             } catch (e) {
+                console.error('[getOutfitSuggestion] 解析错误响应失败:', e);
                 // 如果无法解析错误信息，使用HTTP状态码作为参考
                 if (response.status === 401) {
                     console.warn('⚠️ 未登录，使用前端模拟穿搭数据');
@@ -222,9 +223,11 @@ export const getOutfitSuggestion = async (): Promise<{ colors: string[], accesso
             return { colors: ["正红色", "亮金色"], accessory: "玉石挂件", quote: "鸿运当头，顺风顺水。" };
         }
 
-        return await response.json();
+        const data = await response.json();
+        console.log('[getOutfitSuggestion] API成功响应:', data);
+        return data;
     } catch (error) {
-        console.error("API Error:", error);
+        console.error("[getOutfitSuggestion] API调用异常:", error);
         // 返回模拟数据，避免前端卡死
         console.warn('⚠️ 使用前端模拟穿搭数据');
         return {

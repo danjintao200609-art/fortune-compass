@@ -2,11 +2,10 @@ import { Request, Response } from 'express';
 import { aiService } from '../services/aiService';
 import { supabase } from '../lib/supabase';
 
-// Helper to check user auth (simplified for now, ideally verified via middleware)
+// Helper to check user auth (authMiddleware已经验证过用户身份，直接从req.user获取)
 const getUserId = (req: Request) => {
-    // logic to extract user_id from headers/token
-    // For now, if passed in header 'x-user-id', use it, else null
-    return req.headers['x-user-id'] as string || null;
+    // 从authMiddleware附加的user对象中获取用户ID
+    return req.user?.id || null;
 };
 
 export const createFortune = async (req: Request, res: Response): Promise<void> => {

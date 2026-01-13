@@ -26,17 +26,42 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
     if (!term) return;
     setIsDreamLoading(true);
     setDreamResult(null);
-    const result = await interpretDream(term);
-    setDreamResult(result || "天机难测，请换个描述再试。");
-    setIsDreamLoading(false);
+    
+    console.log('[handleDreamSearch] 开始解析梦境，term:', term);
+    
+    try {
+      const result = await interpretDream(term);
+      console.log('[handleDreamSearch] 梦境解析结果:', result);
+      setDreamResult(result || "天机难测，请换个描述再试。");
+    } catch (error) {
+      console.error('[handleDreamSearch] 解析梦境失败:', error);
+      setDreamResult("服务暂时不可用，请稍后再试。");
+    } finally {
+      setIsDreamLoading(false);
+    }
   };
 
   const handleGenerateOutfit = async () => {
     if (!isAuthenticated) return;
     setIsGeneratingOutfit(true);
-    const data = await getOutfitSuggestion();
-    setOutfitData(data);
-    setIsGeneratingOutfit(false);
+    
+    console.log('[handleGenerateOutfit] 开始生成穿搭建议');
+    
+    try {
+      const data = await getOutfitSuggestion();
+      console.log('[handleGenerateOutfit] 穿搭建议结果:', data);
+      setOutfitData(data);
+    } catch (error) {
+      console.error('[handleGenerateOutfit] 生成穿搭建议失败:', error);
+      // 使用默认值，避免UI崩溃
+      setOutfitData({
+        colors: ["正红色", "亮金色"],
+        accessory: "玉石挂件",
+        quote: "鸿运当头，顺风顺水。"
+      });
+    } finally {
+      setIsGeneratingOutfit(false);
+    }
   };
 
   if (!isAuthenticated) {
