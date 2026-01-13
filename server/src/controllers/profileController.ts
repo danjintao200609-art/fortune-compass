@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { supabase } from '../lib/supabase';
+import { pool } from '../lib/db';
 
 export const getProfile = async (req: Request, res: Response): Promise<void> => {
     // 使用认证中间件提供的用户信息
@@ -12,19 +12,23 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
 
     console.log(`[获取个人资料] 用户ID: ${userId}`);
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+    try {
+        const result = await pool.query(
+            'SELECT * FROM profiles WHERE id = $1',
+            [userId]
+        );
 
-    if (error) {
-        console.log(`[获取个人资料] 未找到，返回空: ${error.message}`);
-        // 如果没有找到，返回空对象而不是错误
-        res.json({});
-    } else {
-        console.log(`[获取个人资料] 成功:`, data);
-        res.json(data);
+        if (result.rows.length === 0) {
+            console.log(`[获取个人资料] 未找到，返回空`);
+            // 如果没有找到，返回空对象而不是错误
+            res.json({});
+        } else {
+            console.log(`[获取个人资料] 成功:`, result.rows[0]);
+            res.json(result.rows[0]);
+        }
+    } catch (error) {
+        console.error('[获取个人资料] 错误:', error);
+        res.status(500).json({ error: 'Failed to get profile' });
     }
 };
 
@@ -40,17 +44,23 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
 
     console.log(`[更新个人资料] 用户ID: ${userId}, 数据:`, updates);
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .upsert({ id: userId, ...updates, updated_at: new Date().toISOString() })
-        .select()
-        .single();
+    try {
+        const { birthday, gender, nickname, avatar_url } = updates;
+        
+        // 使用 upsert (INSERT ... ON CONFLICT DO UPDATE) 语法
+        const result = await pool.query(
+            `INSERT INTO profiles (id, birthday, gender, nickname, avatar_url, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (id)
+             DO UPDATE SET birthday = $2, gender = $3, nickname = $4, avatar_url = $5, updated_at = $6
+             RETURNING *`,
+            [userId, birthday, gender, nickname, avatar_url, new Date().toISOString()]
+        );
 
-    if (error) {
+        console.log('[更新个人资料] 成功:', result.rows[0]);
+        res.json(result.rows[0]);
+    } catch (error) {
         console.error('[更新个人资料] 错误:', error);
         res.status(500).json({ error: 'Failed to update profile' });
-    } else {
-        console.log('[更新个人资料] 成功:', data);
-        res.json(data);
     }
 };

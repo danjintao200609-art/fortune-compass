@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { supabase } from '../lib/supabase';
+import { pool } from '../lib/db';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const TOKEN_EXPIRY = '7d'; // Token 有效期7天
@@ -72,26 +72,24 @@ export const registerUser = async (data: RegisterData): Promise<{ user: AuthUser
         }
 
         // 检查用户名是否已存在
-        const { data: existingUser } = await supabase
-            .from('auth_users')
-            .select('id')
-            .eq('username', data.username)
-            .single();
+        const existingUserResult = await pool.query(
+            'SELECT id FROM auth_users WHERE username = $1',
+            [data.username]
+        );
 
-        if (existingUser) {
+        if (existingUserResult.rows.length > 0) {
             console.log(`[注册失败] 用户名已存在: ${data.username}`);
             return { error: '用户名已被使用' };
         }
 
         // 检查邮箱是否已存在
         if (data.email) {
-            const { data: existingEmail } = await supabase
-                .from('auth_users')
-                .select('id')
-                .eq('email', data.email)
-                .single();
+            const existingEmailResult = await pool.query(
+                'SELECT id FROM auth_users WHERE email = $1',
+                [data.email]
+            );
 
-            if (existingEmail) {
+            if (existingEmailResult.rows.length > 0) {
                 console.log(`[注册失败] 邮箱已存在: ${data.email}`);
                 return { error: '邮箱已被注册' };
             }
@@ -99,13 +97,12 @@ export const registerUser = async (data: RegisterData): Promise<{ user: AuthUser
 
         // 检查手机号是否已存在
         if (data.phone) {
-            const { data: existingPhone } = await supabase
-                .from('auth_users')
-                .select('id')
-                .eq('phone', data.phone)
-                .single();
+            const existingPhoneResult = await pool.query(
+                'SELECT id FROM auth_users WHERE phone = $1',
+                [data.phone]
+            );
 
-            if (existingPhone) {
+            if (existingPhoneResult.rows.length > 0) {
                 console.log(`[注册失败] 手机号已存在: ${data.phone}`);
                 return { error: '手机号已被注册' };
             }
@@ -115,21 +112,19 @@ export const registerUser = async (data: RegisterData): Promise<{ user: AuthUser
         const passwordHash = await hashPassword(data.password);
 
         // 创建用户
-        const { data: newUser, error } = await supabase
-            .from('auth_users')
-            .insert({
-                username: data.username,
-                email: data.email || null,
-                phone: data.phone || null,
-                password_hash: passwordHash,
-            })
-            .select('id, username, email, phone')
-            .single();
+        const newUserResult = await pool.query(
+            `INSERT INTO auth_users (username, email, phone, password_hash)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id, username, email, phone`,
+            [data.username, data.email || null, data.phone || null, passwordHash]
+        );
 
-        if (error) {
-            console.error('[注册错误]:', error);
+        if (newUserResult.rows.length === 0) {
+            console.error('[注册错误]: 用户创建失败');
             return { error: '注册失败，请稍后重试' };
         }
+
+        const newUser = newUserResult.rows[0];
 
         const user: AuthUser = {
             id: newUser.id,
@@ -157,25 +152,27 @@ export const loginUser = async (data: LoginData): Promise<{ user: AuthUser; toke
         console.log(`[登录尝试] 类型: ${loginType}, 标识符: ${data.identifier}`);
 
         // 查找用户（通过邮箱或手机号）
-        let query = supabase
-            .from('auth_users')
-            .select('id, username, email, phone, password_hash, is_active');
-
-        // 判断identifier是邮箱还是手机号
+        let userDataResult;
         if (data.identifier.includes('@')) {
-            query = query.eq('email', data.identifier);
+            userDataResult = await pool.query(
+                'SELECT id, username, email, phone, password_hash, is_active FROM auth_users WHERE email = $1',
+                [data.identifier]
+            );
         } else {
-            query = query.eq('phone', data.identifier);
+            userDataResult = await pool.query(
+                'SELECT id, username, email, phone, password_hash, is_active FROM auth_users WHERE phone = $1',
+                [data.identifier]
+            );
         }
 
-        const { data: userData, error } = await query.single();
-
         // 检查用户是否存在
-        if (error || !userData) {
+        if (userDataResult.rows.length === 0) {
             console.log(`[登录失败] 用户不存在: ${data.identifier}`);
             // 为了安全性，不透露用户是否存在
             return { error: '邮箱/手机号或密码错误' };
         }
+
+        const userData = userDataResult.rows[0];
 
         // 检查账户是否被禁用
         if (!userData.is_active) {
@@ -192,10 +189,10 @@ export const loginUser = async (data: LoginData): Promise<{ user: AuthUser; toke
         }
 
         // 更新最后登录时间
-        await supabase
-            .from('auth_users')
-            .update({ last_login: new Date().toISOString() })
-            .eq('id', userData.id);
+        await pool.query(
+            'UPDATE auth_users SET last_login = $1 WHERE id = $2',
+            [new Date().toISOString(), userData.id]
+        );
 
         const user: AuthUser = {
             id: userData.id,
@@ -221,13 +218,14 @@ export const getUserFromToken = async (token: string): Promise<AuthUser | null> 
     if (!decoded) return null;
 
     try {
-        const { data: userData, error } = await supabase
-            .from('auth_users')
-            .select('id, username, email, phone')
-            .eq('id', decoded.id)
-            .single();
+        const userDataResult = await pool.query(
+            'SELECT id, username, email, phone FROM auth_users WHERE id = $1',
+            [decoded.id]
+        );
 
-        if (error || !userData) return null;
+        if (userDataResult.rows.length === 0) return null;
+
+        const userData = userDataResult.rows[0];
 
         return {
             id: userData.id,
