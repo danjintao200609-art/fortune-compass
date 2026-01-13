@@ -1,5 +1,4 @@
 import { UserConfig, FortuneMode, FortuneResult } from '../../types';
-import { supabase } from '../lib/supabase';
 
 // The frontend service now delegates to the backend API via the Vite proxy.
 // Base API URL is relative because of Vite proxy configuration in vite.config.ts
@@ -14,17 +13,12 @@ const getAuthHeaders = async (): Promise<HeadersInit> => {
     try {
         console.log('[getAuthHeaders] 开始获取认证头');
         
-        // 使用 Supabase 客户端获取当前会话
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // 从localStorage获取token
+        const token = localStorage.getItem('laf-token') || localStorage.getItem('auth-token') || '';
         
-        if (error) {
-            console.error('[getAuthHeaders] 获取会话失败:', error);
-            return headers;
-        }
-        
-        if (session && session.access_token) {
-            console.log('[getAuthHeaders] 从Supabase会话获取到token:', session.access_token);
-            headers['Authorization'] = `Bearer ${session.access_token}`;
+        if (token) {
+            console.log('[getAuthHeaders] 从localStorage获取到token');
+            headers['Authorization'] = `Bearer ${token}`;
         } else {
             console.warn('[getAuthHeaders] 未找到有效的认证token');
         }
@@ -122,7 +116,11 @@ export const generateFortune = async (config: UserConfig, mode: FortuneMode = 'f
             throw new Error(errorMessage);
         }
 
-        return await response.json();
+        const result = await response.json();
+        
+        // 运势结果已由后端保存到数据库，前端不需要再次保存
+        
+        return result;
     } catch (error) {
         console.error("API Error:", error);
         // 返回模拟数据，避免前端卡死

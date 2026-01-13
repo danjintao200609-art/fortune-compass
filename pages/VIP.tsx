@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Page } from '../types';
 import { interpretDream, getOutfitSuggestion } from '@/services/gemini';
+import { laf } from '../src/lib/laf';
 
 // Fix: Destructure navigateTo from props to ensure consistent component interface.
 const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolean; onLoginPrompt?: () => void }> = ({ navigateTo, isAuthenticated, onLoginPrompt }) => {
@@ -10,18 +11,76 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
   const [isDreamLoading, setIsDreamLoading] = useState(false);
   const [isGeneratingOutfit, setIsGeneratingOutfit] = useState(false);
   const [outfitData, setOutfitData] = useState<{ colors: string[], accessory: string, quote: string } | null>(null);
+  // VIP状态和加载状态
+  const [isVip, setIsVip] = useState(false);
+  const [isVipLoading, setIsVipLoading] = useState(false);
+  const [vipCheckError, setVipCheckError] = useState<string | null>(null);
 
+  // 检查用户VIP状态
+  const checkVipStatus = async () => {
+    if (!isAuthenticated) return;
+    
+    setIsVipLoading(true);
+    setVipCheckError(null);
+    
+    try {
+      // 从本地存储获取用户ID
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        throw new Error('未找到用户ID');
+      }
+      
+      // 使用Laf查询用户VIP状态
+      const result = await laf.database.collection('profiles').where({
+        user_id: userId
+      }).get();
+      
+      if (result.data && result.data.length > 0) {
+        const profile = result.data[0];
+        setIsVip(profile.is_vip || false);
+      }
+    } catch (error) {
+      console.error('[checkVipStatus] 检查VIP状态失败:', error);
+      setVipCheckError('检查VIP状态失败');
+    } finally {
+      setIsVipLoading(false);
+    }
+  };
+
+  // 当用户认证状态变化时，检查VIP状态
   useEffect(() => {
     if (isAuthenticated) {
-      handleGenerateOutfit();
+      checkVipStatus();
+    } else {
+      setIsVip(false);
+      setIsVipLoading(false);
     }
   }, [isAuthenticated]);
+
+  // 当VIP状态确认后，生成穿搭建议
+  useEffect(() => {
+    if (isAuthenticated && isVip) {
+      handleGenerateOutfit();
+    }
+  }, [isAuthenticated, isVip]);
 
   const handleDreamSearch = async (category?: string) => {
     if (!isAuthenticated) {
       onLoginPrompt?.();
       return;
     }
+    
+    // 检查VIP状态（如果还在加载中，不执行操作）
+    if (isVipLoading) {
+      return;
+    }
+    
+    // 如果不是VIP，不执行操作
+    if (!isVip) {
+      setDreamResult("该功能仅对VIP用户开放");
+      return;
+    }
+    
     const term = category || dreamInput;
     if (!term) return;
     setIsDreamLoading(true);
@@ -43,6 +102,22 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
 
   const handleGenerateOutfit = async () => {
     if (!isAuthenticated) return;
+    
+    // 检查VIP状态（如果还在加载中，不执行操作）
+    if (isVipLoading) {
+      return;
+    }
+    
+    // 如果不是VIP，不执行操作
+    if (!isVip) {
+      setOutfitData({
+        colors: ["正红色", "亮金色"],
+        accessory: "玉石挂件",
+        quote: "该功能仅对VIP用户开放"
+      });
+      return;
+    }
+    
     setIsGeneratingOutfit(true);
     
     console.log('[handleGenerateOutfit] 开始生成穿搭建议');
@@ -57,7 +132,7 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
       setOutfitData({
         colors: ["正红色", "亮金色"],
         accessory: "玉石挂件",
-        quote: "鸿运当头，顺风顺水。"
+        quote: "服务暂时不可用，请稍后再试。"
       });
     } finally {
       setIsGeneratingOutfit(false);
@@ -86,6 +161,19 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
         >
           先去随便看看
         </button>
+      </div>
+    );
+  }
+
+  // 显示VIP检查加载状态
+  if (isVipLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-charcoal-950 px-8 text-center space-y-6 pb-24">
+        <div className="w-24 h-24 rounded-full border-4 border-gold-400/20 border-t-gold-400 animate-spin"></div>
+        <div className="space-y-2">
+          <h1 className="text-white text-2xl font-black tracking-widest">检查 VIP 权限</h1>
+          <p className="text-gray-400 text-sm leading-relaxed">正在验证您的 VIP 身份，请稍候...</p>
+        </div>
       </div>
     );
   }

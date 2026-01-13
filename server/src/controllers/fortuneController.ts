@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { aiService } from '../services/aiService';
-import { supabase } from '../lib/supabase';
+import { pool } from '../lib/db';
 
 // Helper to check user auth (authMiddleware已经验证过用户身份，直接从req.user获取)
 const getUserId = (req: Request) => {
@@ -22,25 +22,36 @@ export const createFortune = async (req: Request, res: Response): Promise<void> 
         const userId = (req as any).user?.id;
 
         if (userId) {
-            console.log('[createFortune] 尝试保存到 Supabase, user_id:', userId);
-            const { error } = await supabase.from('fortune_history').insert({
-                user_id: userId,
-                fortunetype: mode || 'fengshui',
-                game_type: config.gameType,
-                prediction_date: config.predictionDate,
-                direction: result.direction,
-                summary: result.summary,
-                lucky_color: result.luckyColor,
-                best_time: result.bestTime,
-                energy_value: result.energyValue,
-                lucky_numbers: result.luckyNumbers,
-            });
-
-            if (error) {
-                console.error('[createFortune] Supabase 保存失败:', error);
+            console.log('[createFortune] 尝试保存到 PostgreSQL, user_id:', userId);
+            try {
+                // 使用 pg 保存到 PostgreSQL 表
+                const query = `
+                    INSERT INTO fortune_history (
+                        user_id, fortunetype, game_type, prediction_date, 
+                        direction, summary, lucky_color, best_time, 
+                        energy_value, lucky_numbers, created_at
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                `;
+                
+                const values = [
+                    userId,
+                    mode || 'fengshui',
+                    config.gameType,
+                    config.predictionDate,
+                    result.direction,
+                    result.summary,
+                    result.luckyColor,
+                    result.bestTime,
+                    result.energyValue,
+                    result.luckyNumbers,
+                    new Date().toISOString()
+                ];
+                
+                await pool.query(query, values);
+                console.log('[createFortune] PostgreSQL 保存成功');
+            } catch (error) {
+                console.error('[createFortune] PostgreSQL 保存失败:', error);
                 // 不失败请求，只记录日志
-            } else {
-                console.log('[createFortune] Supabase 保存成功');
             }
         } else {
             console.warn('[createFortune] 未找到用户 ID，跳过保存');

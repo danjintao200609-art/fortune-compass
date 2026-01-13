@@ -8,8 +8,9 @@
     "port": 4173
   },
   "env": {
-    "VITE_SUPABASE_URL": "https://vmnzlweewtzadycwnojg.supabase.co",
-    "VITE_SUPABASE_KEY": "sb_publishable_WzU9-gRbJU2_g3A6nuPClA_YmcYUGY9",
+    "VITE_LAF_APP_ID": "",
+    "LAF_APP_ID": "",
+    "LAF_SERVICE_KEY": "",
     "AI_SERVICE_TYPE": "doubao"
   }
 }

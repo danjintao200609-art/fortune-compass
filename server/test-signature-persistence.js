@@ -5,11 +5,11 @@ const path = require('path');
 // 加载环境变量
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.MEMFIRE_URL;
+const supabaseKey = process.env.MEMFIRE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-    console.error('❌ 缺少 SUPABASE_URL 或 SUPABASE_SERVICE_ROLE_KEY 环境变量');
+    console.error('❌ 缺少 MEMFIRE_URL 或 MEMFIRE_SERVICE_ROLE_KEY 环境变量');
     process.exit(1);
 }
 

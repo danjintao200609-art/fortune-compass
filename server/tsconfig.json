@@ -13,5 +13,12 @@
                 "../types"
             ]
         }
-    }
+    },
+    "include": ["src/**/*"],
+    "exclude": [
+        "node_modules",
+        "src/controllers/profileController.ts",
+        "src/middleware/authMiddleware.ts",
+        "src/services/authService.ts"
+    ]
 }

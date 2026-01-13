@@ -12,3 +12,14 @@ declare module '*.png'
 declare module '*.jpg'
 
 declare module '*.json'
+
+// 扩展 Vite 的 ImportMetaEnv 接口，添加我们的环境变量
+declare interface ImportMetaEnv {
+  readonly VITE_MEMFIRE_URL: string;
+  readonly VITE_MEMFIRE_KEY: string;
+  // 其他环境变量...
+}
+
+declare interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
