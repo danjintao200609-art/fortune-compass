@@ -111,12 +111,27 @@ export const registerUser = async (data: RegisterData): Promise<{ user: AuthUser
         // 加密密码
         const passwordHash = await hashPassword(data.password);
 
+        // 生成自定义用户ID：从202600开始递增
+        const getNextUserId = async (): Promise<string> => {
+            // 查询当前最大ID
+            const maxIdResult = await pool.query(
+                'SELECT COALESCE(MAX(id::integer), 202599) as max_id FROM auth_users'
+            );
+            const maxId = maxIdResult.rows[0].max_id;
+            
+            // 生成下一个ID
+            const nextId = maxId + 1;
+            return nextId.toString();
+        };
+
+        const userId = await getNextUserId();
+
         // 创建用户
         const newUserResult = await pool.query(
-            `INSERT INTO auth_users (username, email, phone, password_hash)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO auth_users (id, username, email, phone, password_hash)
+             VALUES ($1, $2, $3, $4, $5)
              RETURNING id, username, email, phone`,
-            [data.username, data.email || null, data.phone || null, passwordHash]
+            [userId, data.username, data.email || null, data.phone || null, passwordHash]
         );
 
         if (newUserResult.rows.length === 0) {
