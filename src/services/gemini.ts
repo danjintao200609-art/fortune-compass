@@ -1,4 +1,5 @@
 import { UserConfig, FortuneMode, FortuneResult } from '../../types';
+import { supabase } from '../lib/supabase';
 
 // The frontend service now delegates to the backend API via the Vite proxy.
 // Base API URL is relative because of Vite proxy configuration in vite.config.ts
@@ -27,25 +28,20 @@ const getAuthHeaders = (): HeadersInit => {
 
 export const getProfile = async (userId: string) => {
     try {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            console.log('[getProfile] 无 token，跳过请求');
-            return null;
-        }
-
         console.log('[getProfile] 正在获取用户资料...');
-        const response = await fetch(`${API_BASE}/profile`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
 
-        if (!response.ok) {
-            console.error('[getProfile] 请求失败:', response.status);
+        // 直接使用 Supabase SDK 查询
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            console.error('[getProfile] 请求失败:', error.message);
             return null;
         }
 
-        const data = await response.json();
         console.log('[getProfile] 成功获取:', data);
         return data;
     } catch (e) {
@@ -56,28 +52,28 @@ export const getProfile = async (userId: string) => {
 
 export const updateProfile = async (userId: string, data: any) => {
     try {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            console.log('[updateProfile] 无 token，无法保存');
-            return null;
-        }
-
         console.log('[updateProfile] 正在保存资料:', data);
-        const response = await fetch(`${API_BASE}/profile`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(data)
-        });
 
-        if (!response.ok) {
-            console.error('[updateProfile] 保存失败:', response.status);
+        // 使用 upsert 方法：如果记录不存在就插入，存在就更新
+        const { data: result, error } = await supabase
+            .from('profiles')
+            .upsert({
+                id: userId,
+                nickname: data.nickname,
+                gender: data.gender,
+                birthday: data.birthday,
+                signature: data.signature
+            }, {
+                onConflict: 'id'
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('[updateProfile] 保存失败:', error.message);
             return null;
         }
 
-        const result = await response.json();
         console.log('[updateProfile] 保存成功:', result);
         return result;
     } catch (e) {
