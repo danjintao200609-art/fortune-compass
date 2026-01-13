@@ -270,7 +270,15 @@ const Settings: React.FC<SettingsProps> = ({ navigateTo, profileData, setProfile
           <p className="text-gold-400/60 text-[10px] font-medium">尊享VIP大师级独家指南</p>
         </div>
         <button
-          onClick={() => navigateTo(Page.VIP)}
+          onClick={() => {
+            // 直接开通VIP，然后导航到VIP页面
+            const userId = localStorage.getItem('user_id');
+            if (userId) {
+              localStorage.setItem(`vip-${userId}`, 'true');
+              alert('VIP功能已成功开通！');
+            }
+            navigateTo(Page.VIP);
+          }}
           className="bg-gold-gradient text-charcoal-950 font-black text-[10px] px-5 py-2.5 rounded-full shadow-lg active:scale-95 transition-all"
         >
           立即开通

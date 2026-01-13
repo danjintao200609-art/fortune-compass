@@ -30,21 +30,31 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
         throw new Error('未找到用户ID');
       }
       
-      // 使用Laf查询用户VIP状态
-      const result = await laf.database.collection('profiles').where({
-        user_id: userId
-      }).get();
-      
-      if (result.data && result.data.length > 0) {
-        const profile = result.data[0];
-        setIsVip(profile.is_vip || false);
-      }
+      // 从本地存储获取VIP状态（简化实现，实际应从后端API获取）
+      const vipStatus = localStorage.getItem(`vip-${userId}`);
+      setIsVip(vipStatus === 'true');
     } catch (error) {
       console.error('[checkVipStatus] 检查VIP状态失败:', error);
       setVipCheckError('检查VIP状态失败');
     } finally {
       setIsVipLoading(false);
     }
+  };
+
+  // 开通VIP功能
+  const handleVipActivate = () => {
+    if (!isAuthenticated) return;
+    
+    // 从本地存储获取用户ID
+    const userId = localStorage.getItem('user_id');
+    if (!userId) return;
+    
+    // 设置VIP状态为true
+    localStorage.setItem(`vip-${userId}`, 'true');
+    setIsVip(true);
+    
+    // 提示用户
+    alert('VIP功能已成功开通！');
   };
 
   // 当用户认证状态变化时，检查VIP状态
