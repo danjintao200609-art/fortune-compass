@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import fortuneRoutes from './routes/fortuneRoutes';
 import authRoutes from './routes/authRoutes';
+import { testDatabaseConnection } from './lib/db';
 
 dotenv.config();
 
@@ -32,11 +33,15 @@ app.use('/api', fortuneRoutes);
 
 // 只在非 Vercel 环境下启动服务器
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  app.listen(PORT, '0.0.0.0', () => {
+  app.listen(PORT, '0.0.0.0', async () => {
     console.log(`=========================================`);
     console.log(`🚀 后端服务启动成功！`);
     console.log(`🔗 地址: http://localhost:${PORT}`);
     console.log(`⏰ 时间: ${new Date().toLocaleString()}`);
+    
+    // 异步测试数据库连接
+    await testDatabaseConnection();
+    
     console.log(`=========================================`);
   });
 }
