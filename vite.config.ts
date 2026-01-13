@@ -10,16 +10,14 @@ export default defineConfig(({ mode }) => {
       port: 5173, // 前端固定在 5173
       proxy: {
         '/api': {
-          target: 'http://localhost:3000', // 将所有 API 请求转给 3000 端口的后端
+          target: 'http://localhost:3001', // 将所有 API 请求转给 3001 端口的后端
           changeOrigin: true,
         }
       }
     },
     plugins: [react()],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
-      'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL || ''),
-      'process.env.SUPABASE_KEY': JSON.stringify(env.SUPABASE_KEY || ''),
+      // 移除process.env定义，避免浏览器环境中出现process未定义错误
     },
     resolve: {
       alias: {

@@ -119,12 +119,20 @@ export const generateFortune = async (config: UserConfig, mode: FortuneMode = 'f
         if (!response.ok) {
             // 尝试获取错误信息
             let errorMessage = 'Failed to generate fortune';
+            let errorData = null;
             try {
-                const errorData = await response.json();
+                errorData = await response.json();
                 errorMessage = errorData.error || errorMessage;
             } catch (e) {
                 // 如果无法解析错误信息，使用默认信息
             }
+            
+            // 如果返回了模拟数据，直接使用
+            if (errorData?.fallback && errorData?.data) {
+                console.warn('⚠️ 使用后端返回的模拟运势数据');
+                return errorData.data as FortuneResult;
+            }
+            
             throw new Error(errorMessage);
         }
 
@@ -132,6 +140,7 @@ export const generateFortune = async (config: UserConfig, mode: FortuneMode = 'f
     } catch (error) {
         console.error("API Error:", error);
         // 返回模拟数据，避免前端卡死
+        console.warn('⚠️ 使用前端模拟运势数据');
         return {
             direction: "SE",
             summary: "今日运势颇佳，东南方向大吉。适宜进行重要决策和商务洽谈。贵人运旺，宜多与他人交流合作。下午时段运势更佳，把握机会可事半功倍。",

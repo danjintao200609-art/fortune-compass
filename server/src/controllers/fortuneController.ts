@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { generateFortune, interpretDream, getOutfitSuggestion } from '../services/geminiService';
+import { aiService } from '../services/aiService';
 import { supabase } from '../lib/supabase';
 
 // Helper to check user auth (simplified for now, ideally verified via middleware)
@@ -14,8 +14,8 @@ export const createFortune = async (req: Request, res: Response): Promise<void> 
         const { config, mode } = req.body;
         console.log('[createFortune] 开始生成运势:', { config, mode });
 
-        // 1. Generate Fortune
-        const result = await generateFortune(config, mode);
+        // 1. Generate Fortune using AI service
+        const result = await aiService.generateFortune(config, mode);
         console.log('[createFortune] 运势生成成功');
 
         // 2. Save to Supabase (History)
@@ -50,25 +50,51 @@ export const createFortune = async (req: Request, res: Response): Promise<void> 
         res.json(result);
     } catch (error) {
         console.error('[createFortune] 错误:', error);
-        res.status(500).json({ error: 'Failed to generate fortune', details: error instanceof Error ? error.message : String(error) });
+        res.status(500).json({ 
+            error: '生成运势失败', 
+            details: error instanceof Error ? error.message : String(error),
+            // 返回模拟数据，确保前端能正常显示
+            fallback: true,
+            data: {
+                direction: "SE",
+                summary: "今日运势平稳，建议以稳为主。适合处理日常事务，不宜做出重大决策。西北方向有贵人相助，可适当寻求他人意见。",
+                luckyColor: "蓝色",
+                bestTime: "申时（15:00-17:00）",
+                energyLabel: "运势能量值",
+                energyValue: "75%",
+                luckyNumbers: [2, 7, 12, 19],
+                mode: req.body.mode || 'fengshui'
+            }
+        });
     }
 };
 
 export const getDreamInterpretation = async (req: Request, res: Response): Promise<void> => {
     try {
         const { dream } = req.body;
-        const result = await interpretDream(dream);
+        const result = await aiService.interpretDream(dream);
         res.json({ result });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to interpret dream' });
+        console.error('[getDreamInterpretation] 错误:', error);
+        res.status(500).json({ 
+            error: '解析梦境失败', 
+            result: '梦境解析服务暂时不可用，请稍后再试。'
+        });
     }
 };
 
 export const getOutfit = async (req: Request, res: Response): Promise<void> => {
     try {
-        const result = await getOutfitSuggestion();
+        const result = await aiService.getOutfitSuggestion();
         res.json(result);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to get outfit' });
+        console.error('[getOutfit] 错误:', error);
+        res.status(500).json({ 
+            error: '获取穿搭建议失败',
+            // 返回模拟数据
+            colors: ["正红色", "亮金色"],
+            accessory: "玉石挂件",
+            quote: "鸿运当头，顺风顺水。"
+        });
     }
 };

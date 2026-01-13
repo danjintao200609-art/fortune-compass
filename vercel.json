@@ -9,5 +9,12 @@
             "source": "/api/(.*)",
             "destination": "/api/index.js"
         }
-    ]
+    ],
+    "env": {
+        "AI_SERVICE_TYPE": "doubao",
+        "DOUBAO_API_URL": "https://open.doubao.com/api/v1/chat/completions",
+        "DEEPSEEK_API_URL": "https://api.deepseek.com/v1/chat/completions",
+        "VITE_SUPABASE_URL": "https://vmnzlweewtzadycwnojg.supabase.co",
+        "VITE_SUPABASE_KEY": "sb_publishable_WzU9-gRbJU2_g3A6nuPClA_YmcYUGY9"
+    }
 }
