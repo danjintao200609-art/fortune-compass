@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { aiService } from '../services/aiService';
+import { DoubaoService, DeepSeekService, aiService } from '../services/aiService';
 import { pool } from '../lib/db';
 
 // Helper to check user auth (authMiddleware已经验证过用户身份，直接从req.user获取)
@@ -10,12 +10,20 @@ const getUserId = (req: Request) => {
 
 export const createFortune = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { config, mode } = req.body;
-        console.log('[createFortune] 开始生成运势:', { config, mode });
+        const { config, mode, aiServiceType } = req.body;
+        console.log('[createFortune] 开始生成运势:', { config, mode, aiServiceType });
 
         // 1. Generate Fortune using AI service
+        let aiService;
+        if (aiServiceType === 'deepseek') {
+            aiService = new DeepSeekService();
+        } else {
+            aiService = new DoubaoService();
+        }
+        
         const result = await aiService.generateFortune(config, mode);
         console.log('[createFortune] 运势生成成功');
+        console.log('[createFortune] 生成结果:', result);
 
         // 2. Save to Supabase (History)
         // 从 authMiddleware 中获取用户 ID

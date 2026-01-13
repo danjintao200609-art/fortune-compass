@@ -28,7 +28,13 @@ export class DoubaoService implements AIService {
         throw new Error('Doubao API key is not set');
       }
 
-      const prompt = `Generate a daily fortune tell result in JSON format for a user.\nUser Profile:\nBirthday: ${config.birthday}\nGender: ${config.gender}\nMode: ${mode}\n\nRequired JSON Structure:\n{\n  "direction": "N" | "S" | "E" | "W" | "NE" | "NW" | "SE" | "SW",\n  "summary": "String",\n  "luckyColor": "String",\n  "bestTime": "String",\n  "energyLabel": "String",\n  "energyValue": "String",\n  "luckyNumbers": [Number],\n  "mode": "${mode}"\n}\nLanguage: Chinese.\n\nImportant: Return only the JSON object, no other text!`;
+      // 根据不同模式生成不同的prompt，使用对应领域的专业术语
+      let prompt;
+      if (mode === 'fengshui') {
+        prompt = `请以专业风水师的身份，使用风水五行术语，为用户生成每日运势预测结果，格式为JSON。\n用户资料:\n生日: ${config.birthday}\n性别: ${config.gender}\n\n预测要求：\n1. 方向：使用风水方位术语，如正东、正南、西北等\n2. 总结：详细分析今日风水运势，包括方位吉凶、五行相生相克关系、适宜事项等\n3. 幸运色彩：根据五行理论推荐幸运色\n4. 最佳时间：根据时辰分析最佳办事时间\n5. 能量值：使用百分比表示运势能量\n6. 幸运数字：根据五行和八字分析推荐幸运数字\n\nRequired JSON Structure:\n{\n  "direction": "N" | "S" | "E" | "W" | "NE" | "NW" | "SE" | "SW",\n  "summary": "详细的风水运势分析，使用专业风水术语",\n  "luckyColor": "幸运颜色",\n  "bestTime": "最佳时间段，如巳时(9:00-11:00)",\n  "energyLabel": "运势能量值",\n  "energyValue": "如85%",\n  "luckyNumbers": [Number],\n  "mode": "fengshui"\n}\nLanguage: Chinese.\n\nImportant: Return only the JSON object, no other text!`;
+      } else {
+        prompt = `请以专业占星师的身份，使用星座术语，为用户生成每日星座运势预测结果，格式为JSON。\n用户资料:\n生日: ${config.birthday}\n性别: ${config.gender}\n\n预测要求：\n1. 方向：根据星座运势推荐吉利方位\n2. 总结：详细分析今日星座运势，包括行星影响、星座相位、事业爱情财运等方面\n3. 幸运色彩：根据星座特质推荐幸运色\n4. 最佳时间：根据星象分析最佳办事时间\n5. 能量值：使用百分比表示运势能量\n6. 幸运数字：根据星座和行星位置推荐幸运数字\n\nRequired JSON Structure:\n{\n  "direction": "N" | "S" | "E" | "W" | "NE" | "NW" | "SE" | "SW",\n  "summary": "详细的星座运势分析，使用专业星座术语",\n  "luckyColor": "幸运颜色",\n  "bestTime": "最佳时间段，如上午10点-下午2点",\n  "energyLabel": "星运能量值",\n  "energyValue": "如85%",\n  "luckyNumbers": [Number],\n  "mode": "horoscope"\n}\nLanguage: Chinese.\n\nImportant: Return only the JSON object, no other text!`;
+      }
 
       const response = await fetch(this.apiUrl, {
         method: 'POST',
@@ -226,7 +232,13 @@ export class DeepSeekService implements AIService {
         throw new Error('DeepSeek API key is not set');
       }
 
-      const prompt = `Generate a daily fortune tell result in JSON format for a user.\nUser Profile:\nBirthday: ${config.birthday}\nGender: ${config.gender}\nMode: ${mode}\n\nRequired JSON Structure:\n{\n  "direction": "N" | "S" | "E" | "W" | "NE" | "NW" | "SE" | "SW",\n  "summary": "String",\n  "luckyColor": "String",\n  "bestTime": "String",\n  "energyLabel": "String",\n  "energyValue": "String",\n  "luckyNumbers": [Number],\n  "mode": "${mode}"\n}\nLanguage: Chinese.\n\nImportant: Return only the JSON object, no other text!`;
+      // 根据不同模式生成不同的prompt，使用对应领域的专业术语
+      let prompt;
+      if (mode === 'fengshui') {
+        prompt = `请以专业风水师的身份，使用风水五行术语，为用户生成每日运势预测结果，格式为JSON。\n用户资料:\n生日: ${config.birthday}\n性别: ${config.gender}\n\n预测要求：\n1. 方向：使用风水方位术语，如正东、正南、西北等\n2. 总结：详细分析今日风水运势，包括方位吉凶、五行相生相克关系、适宜事项等\n3. 幸运色彩：根据五行理论推荐幸运色\n4. 最佳时间：根据时辰分析最佳办事时间\n5. 能量值：使用百分比表示运势能量\n6. 幸运数字：根据五行和八字分析推荐幸运数字\n\nRequired JSON Structure:\n{\n  "direction": "N" | "S" | "E" | "W" | "NE" | "NW" | "SE" | "SW",\n  "summary": "详细的风水运势分析，使用专业风水术语",\n  "luckyColor": "幸运颜色",\n  "bestTime": "最佳时间段，如巳时(9:00-11:00)",\n  "energyLabel": "运势能量值",\n  "energyValue": "如85%",\n  "luckyNumbers": [Number],\n  "mode": "fengshui"\n}\nLanguage: Chinese.\n\nImportant: Return only the JSON object, no other text!`;
+      } else {
+        prompt = `请以专业占星师的身份，使用星座术语，为用户生成每日星座运势预测结果，格式为JSON。\n用户资料:\n生日: ${config.birthday}\n性别: ${config.gender}\n\n预测要求：\n1. 方向：根据星座运势推荐吉利方位\n2. 总结：详细分析今日星座运势，包括行星影响、星座相位、事业爱情财运等方面\n3. 幸运色彩：根据星座特质推荐幸运色\n4. 最佳时间：根据星象分析最佳办事时间\n5. 能量值：使用百分比表示运势能量\n6. 幸运数字：根据星座和行星位置推荐幸运数字\n\nRequired JSON Structure:\n{\n  "direction": "N" | "S" | "E" | "W" | "NE" | "NW" | "SE" | "SW",\n  "summary": "详细的星座运势分析，使用专业星座术语",\n  "luckyColor": "幸运颜色",\n  "bestTime": "最佳时间段，如上午10点-下午2点",\n  "energyLabel": "星运能量值",\n  "energyValue": "如85%",\n  "luckyNumbers": [Number],\n  "mode": "horoscope"\n}\nLanguage: Chinese.\n\nImportant: Return only the JSON object, no other text!`;
+      }
 
       const response = await fetch(this.apiUrl, {
         method: 'POST',

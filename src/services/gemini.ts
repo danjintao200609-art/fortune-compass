@@ -87,13 +87,13 @@ export const updateProfile = async (userId: string, data: any) => {
 
 // --- AI Services ---
 
-export const generateFortune = async (config: UserConfig, mode: FortuneMode = 'fengshui'): Promise<FortuneResult> => {
+export const generateFortune = async (config: UserConfig, mode: FortuneMode = 'fengshui', aiServiceType: string = 'doubao'): Promise<FortuneResult> => {
     try {
         const headers = await getAuthHeaders();
         const response = await fetch(`${API_BASE}/fortune`, {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify({ config, mode }),
+            body: JSON.stringify({ config, mode, aiServiceType }),
         });
 
         if (!response.ok) {

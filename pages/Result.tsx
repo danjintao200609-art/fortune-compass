@@ -42,7 +42,9 @@ const Result: React.FC<ResultProps> = ({ fortune: initialFortune, navigateTo, us
     setActiveModel(modelId);
 
     try {
-      const newFortune = await generateFortune(userConfig, mode);
+      // 根据modelId选择AI服务类型
+      const aiServiceType = modelId.startsWith('doubao') ? 'doubao' : 'deepseek';
+      const newFortune = await generateFortune(userConfig, mode, aiServiceType);
       setCurrentFortune(newFortune);
       updateFortune(newFortune);
     } catch (error) {
@@ -132,8 +134,8 @@ const Result: React.FC<ResultProps> = ({ fortune: initialFortune, navigateTo, us
             <ToggleBtn active={activeModel === 'deepseek-constellation'} label="DeepSeek星座" onClick={() => handleModelChange('deepseek-constellation', 'horoscope')} />
           </div>
           <div className="flex gap-2">
-            <ToggleBtn active={activeModel === 'chatgpt-fengshui'} label="ChatGPT风水" onClick={() => handleModelChange('chatgpt-fengshui', 'fengshui')} />
-            <ToggleBtn active={activeModel === 'chatgpt-constellation'} label="ChatGPT星座" onClick={() => handleModelChange('chatgpt-constellation', 'horoscope')} />
+            <ToggleBtn active={activeModel === 'doubao-fengshui'} label="豆包风水" onClick={() => handleModelChange('doubao-fengshui', 'fengshui')} />
+            <ToggleBtn active={activeModel === 'doubao-constellation'} label="豆包星座" onClick={() => handleModelChange('doubao-constellation', 'horoscope')} />
           </div>
         </div>
 
