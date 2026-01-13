@@ -101,14 +101,31 @@ export const getToken = (): string | null => {
     return localStorage.getItem('supabase.auth.token') || null;
 };
 
-// 获取当前用户
+// 获取当前用户 (同步获取可能不准确，建议使用 verifyToken)
 export const getCurrentUser = (): AuthUser | null => {
-    // 从 Supabase session 同步获取
-    const session = supabase.auth.getSession();
-    // 注意：这里是异步的，但为了保持接口兼容，我们返回 null
-    // 实际使用中应该使用 verifyToken
+    // 遍历 localStorage 找到 Supabase 的 key
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.includes('auth-token') && (key.startsWith('sb-') || key.startsWith('supabase.'))) {
+            const sessionStr = localStorage.getItem(key);
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    const user = session.user || session;
+                    if (user && user.id) {
+                        return {
+                            id: user.id,
+                            username: user.user_metadata?.username || user.email?.split('@')[0] || 'User',
+                            email: user.email
+                        };
+                    }
+                } catch (e) { }
+            }
+        }
+    }
     return null;
 };
+
 
 // 验证 token 是否有效
 export const verifyToken = async (): Promise<AuthUser | null> => {

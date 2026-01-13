@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Page, Gender } from '../types';
 
 type SettingView = 'main' | 'login' | 'register' | 'profile' | 'notifications' | 'language' | 'about';
@@ -21,7 +21,10 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ navigateTo, profileData, setProfileData, isAuthenticated, onLogout, onSwitchToAuth }) => {
   const [currentView, setCurrentView] = useState<SettingView>('main');
   const [isSaving, setIsSaving] = useState(false);
+  // 新增：本地草稿状态，用于表单编辑，避免每输入一个字就触发 API
+  const [draftProfile, setDraftProfile] = useState({ ...profileData });
   const [notifState, setNotifState] = useState({
+
     daily: true,
     vip: true,
     system: true
@@ -31,8 +34,8 @@ const Settings: React.FC<SettingsProps> = ({ navigateTo, profileData, setProfile
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      // 调用父组件传入的 setProfileData，它会保存到数据库
-      await setProfileData(profileData);
+      // 真正保存时，将草稿数据一次性提交
+      await setProfileData(draftProfile);
       // 延迟一点时间显示保存动画
       setTimeout(() => {
         setIsSaving(false);
@@ -44,6 +47,13 @@ const Settings: React.FC<SettingsProps> = ({ navigateTo, profileData, setProfile
       alert('保存失败，请重试');
     }
   };
+
+  // 进入编辑页面时更新草稿
+  useEffect(() => {
+    if (currentView === 'profile') {
+      setDraftProfile({ ...profileData });
+    }
+  }, [currentView, profileData]);
 
   const renderHeader = (title: string, onBack: () => void) => (
     <header className="flex items-center mb-8">
@@ -77,21 +87,21 @@ const Settings: React.FC<SettingsProps> = ({ navigateTo, profileData, setProfile
         <div className="space-y-6">
           <ProfileField
             label="用户昵称"
-            value={profileData.nickname}
-            onChange={(val) => setProfileData({ ...profileData, nickname: val })}
+            value={draftProfile.nickname}
+            onChange={(val) => setDraftProfile({ ...draftProfile, nickname: val })}
           />
           <ProfileField label="用户 ID" value="888666" readonly />
           <ProfileField
             label="个人签名"
-            value={profileData.signature}
+            value={draftProfile.signature}
             type="textarea"
-            onChange={(val) => setProfileData({ ...profileData, signature: val })}
+            onChange={(val) => setDraftProfile({ ...draftProfile, signature: val })}
           />
           <ProfileField
             label="出生日期"
-            value={profileData.birthday}
+            value={draftProfile.birthday}
             type="date"
-            onChange={(val) => setProfileData({ ...profileData, birthday: val })}
+            onChange={(val) => setDraftProfile({ ...draftProfile, birthday: val })}
           />
           <div className="space-y-2">
             <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest ml-1">性别</label>
@@ -99,8 +109,8 @@ const Settings: React.FC<SettingsProps> = ({ navigateTo, profileData, setProfile
               {(['male', 'female'] as Gender[]).map((g) => (
                 <button
                   key={g}
-                  onClick={() => setProfileData({ ...profileData, gender: g })}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${profileData.gender === g ? 'bg-charcoal-800 border border-gold-500/30 text-gold-300' : 'text-gray-500'}`}
+                  onClick={() => setDraftProfile({ ...draftProfile, gender: g })}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${draftProfile.gender === g ? 'bg-charcoal-800 border border-gold-500/30 text-gold-300' : 'text-gray-500'}`}
                 >
                   <span className="material-symbols-outlined text-[20px]">{g === 'male' ? 'man' : 'woman'}</span>
                   <span className="text-sm font-bold">{g === 'male' ? '男' : '女'}</span>

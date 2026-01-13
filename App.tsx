@@ -70,10 +70,20 @@ const App: React.FC = () => {
   }, [isAuthenticated, currentUser]);
 
   // Save profile when changed
-  const handleProfileUpdate = (newData: typeof profileData) => {
-    if (!currentUser) return;
+  const handleProfileUpdate = async (newData: typeof profileData) => {
+    if (!currentUser) {
+      // 尝试最后一次同步获取，防止初次登录后的状态滞后
+      const user = auth.getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        return await api.updateProfile(user.id, newData);
+      }
+      console.error("无法更新资料：未找到当前用户");
+      return null;
+    }
+
     setProfileData(newData);
-    api.updateProfile(currentUser.id, {
+    return await api.updateProfile(currentUser.id, {
       nickname: newData.nickname,
       birthday: newData.birthday,
       gender: newData.gender,
@@ -84,18 +94,24 @@ const App: React.FC = () => {
   const navigateTo = (page: Page) => setCurrentPage(page);
 
   // 处理登录成功
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = async () => {
     setIsAuthenticated(true);
-    const user = auth.getCurrentUser();
-    if (user) setCurrentUser(user);
+    // 延迟一小段时间等待 Supabase 写入 storage
+    setTimeout(() => {
+      const user = auth.getCurrentUser();
+      if (user) setCurrentUser(user);
+    }, 100);
   };
 
   // 处理注册成功
-  const handleRegisterSuccess = () => {
+  const handleRegisterSuccess = async () => {
     setIsAuthenticated(true);
-    const user = auth.getCurrentUser();
-    if (user) setCurrentUser(user);
+    setTimeout(() => {
+      const user = auth.getCurrentUser();
+      if (user) setCurrentUser(user);
+    }, 100);
   };
+
 
   // 处理登出
   const handleLogout = () => {
