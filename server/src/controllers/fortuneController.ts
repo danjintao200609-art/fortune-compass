@@ -12,14 +12,18 @@ const getUserId = (req: Request) => {
 export const createFortune = async (req: Request, res: Response): Promise<void> => {
     try {
         const { config, mode } = req.body;
+        console.log('[createFortune] 开始生成运势:', { config, mode });
 
         // 1. Generate Fortune
         const result = await generateFortune(config, mode);
+        console.log('[createFortune] 运势生成成功');
 
         // 2. Save to Supabase (History)
-        const userId = getUserId(req);
-        // If we have a user, save it. Or we can allow anon saves if we want.
+        // 从 authMiddleware 中获取用户 ID
+        const userId = (req as any).user?.id;
+
         if (userId) {
+            console.log('[createFortune] 尝试保存到 Supabase, user_id:', userId);
             const { error } = await supabase.from('fortune_history').insert({
                 user_id: userId,
                 fortunetype: mode || 'fengshui',
@@ -34,15 +38,19 @@ export const createFortune = async (req: Request, res: Response): Promise<void> 
             });
 
             if (error) {
-                console.error('Error saving to supabase:', error);
-                // Don't fail the request if save fails, just log it
+                console.error('[createFortune] Supabase 保存失败:', error);
+                // 不失败请求，只记录日志
+            } else {
+                console.log('[createFortune] Supabase 保存成功');
             }
+        } else {
+            console.warn('[createFortune] 未找到用户 ID，跳过保存');
         }
 
         res.json(result);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to generate fortune' });
+        console.error('[createFortune] 错误:', error);
+        res.status(500).json({ error: 'Failed to generate fortune', details: error instanceof Error ? error.message : String(error) });
     }
 };
 
