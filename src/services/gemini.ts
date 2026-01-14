@@ -1,140 +1,73 @@
 import { UserConfig, FortuneMode, FortuneResult } from '../../types';
 
-// API基础URL - 支持环境变量配置
 const getApiBase = (): string => {
-  const envApiUrl = import.meta.env.VITE_API_URL;
-  if (envApiUrl) {
-    return envApiUrl;
-  }
-  return '/api';
+    let envApiUrl = import.meta.env.VITE_API_URL;
+    if (envApiUrl) {
+        if (envApiUrl.endsWith('/')) envApiUrl = envApiUrl.slice(0, -1);
+        if (envApiUrl.startsWith('http') && !envApiUrl.endsWith('/api')) {
+            envApiUrl += '/api';
+        }
+        return envApiUrl;
+    }
+    return '/api';
 };
 
 const API_BASE = getApiBase();
 
-// Helper to get auth headers
-const getAuthHeaders = async (): Promise<HeadersInit> => {
+const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('auth-token') || '';
     const headers: HeadersInit = {
         'Content-Type': 'application/json',
     };
-    
-    try {
-        console.log('[getAuthHeaders] 开始获取认证头');
-        
-        // 从localStorage获取token
-        const token = localStorage.getItem('laf-token') || localStorage.getItem('auth-token') || '';
-        
-        if (token) {
-            console.log('[getAuthHeaders] 从localStorage获取到token');
-            headers['Authorization'] = `Bearer ${token}`;
-        } else {
-            console.warn('[getAuthHeaders] 未找到有效的认证token');
-        }
-        
-        return headers;
-    } catch (error) {
-        console.error('[getAuthHeaders] 发生错误:', error);
-        return headers;
-    }
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
 };
 
-// --- Profile Services ---
-// 使用后端API获取和更新用户资料，确保安全性和正确性
 export const getProfile = async (userId: string) => {
     try {
-        console.log('[getProfile] 正在获取用户资料...');
-        
-        const headers = await getAuthHeaders();
-
-        // 使用后端API获取用户资料
         const response = await fetch(`${API_BASE}/profile`, {
             method: 'GET',
-            headers: headers,
+            headers: getAuthHeaders(),
         });
-
-        if (!response.ok) {
-            console.error('[getProfile] 请求失败:', response.statusText);
-            return null;
-        }
-
-        const data = await response.json();
-        console.log('[getProfile] 成功获取:', data);
-        return data;
-    } catch (e) {
-        console.error("[getProfile] 失败:", e);
+        return response.ok ? await response.json() : null;
+    } catch {
         return null;
     }
 };
 
 export const updateProfile = async (userId: string, data: any) => {
     try {
-        console.log('[updateProfile] 正在保存资料:', data);
-        
-        const headers = await getAuthHeaders();
-
-        // 使用后端API更新用户资料
         const response = await fetch(`${API_BASE}/profile`, {
             method: 'POST',
-            headers: headers,
+            headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
-
-        if (!response.ok) {
-            console.error('[updateProfile] 保存失败:', response.statusText);
-            return null;
-        }
-
-        const result = await response.json();
-        console.log('[updateProfile] 保存成功:', result);
-        return result;
-    } catch (e) {
-        console.error("[updateProfile] 失败:", e);
+        return response.ok ? await response.json() : null;
+    } catch {
         return null;
     }
 };
 
-// --- AI Services ---
-
 export const generateFortune = async (config: UserConfig, mode: FortuneMode = 'fengshui', aiServiceType: string = 'doubao'): Promise<FortuneResult> => {
     try {
-        const headers = await getAuthHeaders();
         const response = await fetch(`${API_BASE}/fortune`, {
             method: 'POST',
-            headers: headers,
+            headers: getAuthHeaders(),
             body: JSON.stringify({ config, mode, aiServiceType }),
         });
 
         if (!response.ok) {
-            // 尝试获取错误信息
-            let errorMessage = 'Failed to generate fortune';
             let errorData = null;
-            try {
-                errorData = await response.json();
-                errorMessage = errorData.error || errorMessage;
-            } catch (e) {
-                // 如果无法解析错误信息，使用默认信息
-            }
-            
-            // 如果返回了模拟数据，直接使用
-            if (errorData?.fallback && errorData?.data) {
-                console.warn('⚠️ 使用后端返回的模拟运势数据');
-                return errorData.data as FortuneResult;
-            }
-            
-            throw new Error(errorMessage);
+            try { errorData = await response.json(); } catch { }
+            if (errorData?.fallback && errorData?.data) return errorData.data;
+            throw new Error(errorData?.error || 'Failed to generate fortune');
         }
 
-        const result = await response.json();
-        
-        // 运势结果已由后端保存到数据库，前端不需要再次保存
-        
-        return result;
+        return await response.json();
     } catch (error) {
-        console.error("API Error:", error);
-        // 返回模拟数据，避免前端卡死
-        console.warn('⚠️ 使用前端模拟运势数据');
         return {
             direction: "SE",
-            summary: "今日运势颇佳，东南方向大吉。适宜进行重要决策和商务洽谈。贵人运旺，宜多与他人交流合作。下午时段运势更佳，把握机会可事半功倍。",
+            summary: "今日运势颇佳，东南方向大吉。适宜进行重要决策。下午时段运势更佳。",
             luckyColor: "翡翠绿",
             bestTime: "午时（11:00-13:00）",
             energyLabel: "运势能量值",
@@ -147,94 +80,40 @@ export const generateFortune = async (config: UserConfig, mode: FortuneMode = 'f
 
 export const interpretDream = async (dream: string): Promise<string> => {
     try {
-        const headers = await getAuthHeaders();
-        console.log('[interpretDream] 调用API，dream:', dream, 'headers:', headers);
-        
         const response = await fetch(`${API_BASE}/dream`, {
             method: 'POST',
-            headers: headers,
+            headers: getAuthHeaders(),
             body: JSON.stringify({ dream }),
         });
 
-        console.log('[interpretDream] API响应状态:', response.status);
-        
         if (!response.ok) {
-            // 尝试获取错误信息
-            let errorMessage = '解析梦境失败';
             let errorData = null;
-            try {
-                errorData = await response.json();
-                console.log('[interpretDream] API错误响应:', errorData);
-                errorMessage = errorData.error || errorMessage;
-            } catch (e) {
-                console.error('[interpretDream] 解析错误响应失败:', e);
-                // 如果无法解析错误信息，使用HTTP状态码作为参考
-                if (response.status === 401) {
-                    errorMessage = '未登录，请先登录';
-                } else if (response.status >= 500) {
-                    errorMessage = '服务器繁忙，请稍后再试';
-                }
-            }
-            return errorMessage;
+            try { errorData = await response.json(); } catch { }
+            return errorData?.error || '解析梦境失败';
         }
 
         const data = await response.json();
-        console.log('[interpretDream] API成功响应:', data);
         return data.result;
-    } catch (error) {
-        console.error("[interpretDream] API调用异常:", error);
-        // 根据错误类型返回更准确的提示
-        if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
-            return "网络连接异常，请稍后再试。";
-        }
+    } catch {
         return "服务暂时不可用，请稍后再试。";
     }
 };
 
 export const getOutfitSuggestion = async (): Promise<{ colors: string[], accessory: string, quote: string }> => {
     try {
-        const headers = await getAuthHeaders();
-        console.log('[getOutfitSuggestion] 调用API，headers:', headers);
-        
         const response = await fetch(`${API_BASE}/outfit`, {
-            headers: headers,
+            headers: getAuthHeaders(),
         });
 
-        console.log('[getOutfitSuggestion] API响应状态:', response.status);
-        
         if (!response.ok) {
-            // 尝试获取错误信息
-            let errorMessage = '获取穿搭建议失败';
             let errorData = null;
-            try {
-                errorData = await response.json();
-                console.log('[getOutfitSuggestion] API错误响应:', errorData);
-                // 如果返回了模拟数据，直接使用
-                if (errorData?.colors && errorData?.accessory && errorData?.quote) {
-                    console.warn('⚠️ 使用后端返回的模拟穿搭数据');
-                    return errorData;
-                }
-                errorMessage = errorData.error || errorMessage;
-            } catch (e) {
-                console.error('[getOutfitSuggestion] 解析错误响应失败:', e);
-                // 如果无法解析错误信息，使用HTTP状态码作为参考
-                if (response.status === 401) {
-                    console.warn('⚠️ 未登录，使用前端模拟穿搭数据');
-                } else if (response.status >= 500) {
-                    console.warn('⚠️ 服务器错误，使用前端模拟穿搭数据');
-                }
-            }
-            // 返回模拟数据，避免UI崩溃
+            try { errorData = await response.json(); } catch { }
+            if (errorData?.colors && errorData?.accessory && errorData?.quote) return errorData;
             return { colors: ["正红色", "亮金色"], accessory: "玉石挂件", quote: "鸿运当头，顺风顺水。" };
         }
 
-        const data = await response.json();
-        console.log('[getOutfitSuggestion] API成功响应:', data);
-        return data;
-    } catch (error) {
-        console.error("[getOutfitSuggestion] API调用异常:", error);
-        // 返回模拟数据，避免前端卡死
-        console.warn('⚠️ 使用前端模拟穿搭数据');
+        return await response.json();
+    } catch {
         return {
             colors: ["正红色", "亮金色"],
             accessory: "玉石挂件",

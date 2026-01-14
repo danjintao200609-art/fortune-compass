@@ -42,7 +42,6 @@ const Settings: React.FC<SettingsProps> = ({ navigateTo, profileData, setProfile
         setCurrentView('main');
       }, 800);
     } catch (error) {
-      console.error('保存失败:', error);
       setIsSaving(false);
       alert('保存失败，请重试');
     }

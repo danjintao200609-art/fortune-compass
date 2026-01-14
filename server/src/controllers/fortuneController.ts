@@ -2,37 +2,23 @@ import { Request, Response } from 'express';
 import { DoubaoService, DeepSeekService, aiService } from '../services/aiService';
 import { pool } from '../lib/db';
 
-// Helper to check user auth (authMiddleware已经验证过用户身份，直接从req.user获取)
-const getUserId = (req: Request) => {
-    // 从authMiddleware附加的user对象中获取用户ID
-    return req.user?.id || null;
-};
-
 export const createFortune = async (req: Request, res: Response): Promise<void> => {
     try {
         const { config, mode, aiServiceType } = req.body;
-        console.log('[createFortune] 开始生成运势:', { config, mode, aiServiceType });
 
-        // 1. Generate Fortune using AI service
-        let aiService;
+        let aiServiceInstance;
         if (aiServiceType === 'deepseek') {
-            aiService = new DeepSeekService();
+            aiServiceInstance = new DeepSeekService();
         } else {
-            aiService = new DoubaoService();
+            aiServiceInstance = new DoubaoService();
         }
-        
-        const result = await aiService.generateFortune(config, mode);
-        console.log('[createFortune] 运势生成成功');
-        console.log('[createFortune] 生成结果:', result);
 
-        // 2. Save to Supabase (History)
-        // 从 authMiddleware 中获取用户 ID
+        const result = await aiServiceInstance.generateFortune(config, mode);
+
         const userId = (req as any).user?.id;
 
         if (userId) {
-            console.log('[createFortune] 尝试保存到 PostgreSQL, user_id:', userId);
             try {
-                // 使用 pg 保存到 PostgreSQL 表
                 const query = `
                     INSERT INTO fortune_history (
                         user_id, fortunetype, game_type, prediction_date, 
@@ -40,7 +26,7 @@ export const createFortune = async (req: Request, res: Response): Promise<void> 
                         energy_value, lucky_numbers, created_at
                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 `;
-                
+
                 const values = [
                     userId,
                     mode || 'fengshui',
@@ -54,24 +40,18 @@ export const createFortune = async (req: Request, res: Response): Promise<void> 
                     result.luckyNumbers,
                     new Date().toISOString()
                 ];
-                
+
                 await pool.query(query, values);
-                console.log('[createFortune] PostgreSQL 保存成功');
             } catch (error) {
-                console.error('[createFortune] PostgreSQL 保存失败:', error);
-                // 不失败请求，只记录日志
+                // Ignore save errors to not interrupt the response
             }
-        } else {
-            console.warn('[createFortune] 未找到用户 ID，跳过保存');
         }
 
         res.json(result);
     } catch (error) {
-        console.error('[createFortune] 错误:', error);
-        res.status(500).json({ 
-            error: '生成运势失败', 
+        res.status(500).json({
+            error: '生成运势失败',
             details: error instanceof Error ? error.message : String(error),
-            // 返回模拟数据，确保前端能正常显示
             fallback: true,
             data: {
                 direction: "SE",
@@ -93,9 +73,8 @@ export const getDreamInterpretation = async (req: Request, res: Response): Promi
         const result = await aiService.interpretDream(dream);
         res.json({ result });
     } catch (error) {
-        console.error('[getDreamInterpretation] 错误:', error);
-        res.status(500).json({ 
-            error: '解析梦境失败', 
+        res.status(500).json({
+            error: '解析梦境失败',
             result: '梦境解析服务暂时不可用，请稍后再试。'
         });
     }
@@ -106,10 +85,8 @@ export const getOutfit = async (req: Request, res: Response): Promise<void> => {
         const result = await aiService.getOutfitSuggestion();
         res.json(result);
     } catch (error) {
-        console.error('[getOutfit] 错误:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: '获取穿搭建议失败',
-            // 返回模拟数据
             colors: ["正红色", "亮金色"],
             accessory: "玉石挂件",
             quote: "鸿运当头，顺风顺水。"

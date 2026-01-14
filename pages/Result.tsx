@@ -47,8 +47,6 @@ const Result: React.FC<ResultProps> = ({ fortune: initialFortune, navigateTo, us
       const newFortune = await generateFortune(userConfig, mode, aiServiceType);
       setCurrentFortune(newFortune);
       updateFortune(newFortune);
-    } catch (error) {
-      console.error("Switch error:", error);
     } finally {
       setIsSwitching(false);
     }

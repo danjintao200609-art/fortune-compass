@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Page } from '../types';
 import { interpretDream, getOutfitSuggestion } from '@/services/gemini';
-import { laf } from '../src/lib/laf';
 
 // Fix: Destructure navigateTo from props to ensure consistent component interface.
 const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolean; onLoginPrompt?: () => void }> = ({ navigateTo, isAuthenticated, onLoginPrompt }) => {
@@ -19,22 +18,21 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
   // 检查用户VIP状态
   const checkVipStatus = async () => {
     if (!isAuthenticated) return;
-    
+
     setIsVipLoading(true);
     setVipCheckError(null);
-    
+
     try {
       // 从本地存储获取用户ID
       const userId = localStorage.getItem('user_id');
       if (!userId) {
         throw new Error('未找到用户ID');
       }
-      
+
       // 从本地存储获取VIP状态（简化实现，实际应从后端API获取）
       const vipStatus = localStorage.getItem(`vip-${userId}`);
       setIsVip(vipStatus === 'true');
     } catch (error) {
-      console.error('[checkVipStatus] 检查VIP状态失败:', error);
       setVipCheckError('检查VIP状态失败');
     } finally {
       setIsVipLoading(false);
@@ -44,15 +42,15 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
   // 开通VIP功能
   const handleVipActivate = () => {
     if (!isAuthenticated) return;
-    
+
     // 从本地存储获取用户ID
     const userId = localStorage.getItem('user_id');
     if (!userId) return;
-    
+
     // 设置VIP状态为true
     localStorage.setItem(`vip-${userId}`, 'true');
     setIsVip(true);
-    
+
     // 提示用户
     alert('VIP功能已成功开通！');
   };
@@ -79,31 +77,27 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
       onLoginPrompt?.();
       return;
     }
-    
+
     // 检查VIP状态（如果还在加载中，不执行操作）
     if (isVipLoading) {
       return;
     }
-    
+
     // 如果不是VIP，不执行操作
     if (!isVip) {
       setDreamResult("该功能仅对VIP用户开放");
       return;
     }
-    
+
     const term = category || dreamInput;
     if (!term) return;
     setIsDreamLoading(true);
     setDreamResult(null);
-    
-    console.log('[handleDreamSearch] 开始解析梦境，term:', term);
-    
+
     try {
       const result = await interpretDream(term);
-      console.log('[handleDreamSearch] 梦境解析结果:', result);
       setDreamResult(result || "天机难测，请换个描述再试。");
     } catch (error) {
-      console.error('[handleDreamSearch] 解析梦境失败:', error);
       setDreamResult("服务暂时不可用，请稍后再试。");
     } finally {
       setIsDreamLoading(false);
@@ -112,12 +106,12 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
 
   const handleGenerateOutfit = async () => {
     if (!isAuthenticated) return;
-    
+
     // 检查VIP状态（如果还在加载中，不执行操作）
     if (isVipLoading) {
       return;
     }
-    
+
     // 如果不是VIP，不执行操作
     if (!isVip) {
       setOutfitData({
@@ -127,17 +121,13 @@ const VIP: React.FC<{ navigateTo: (page: Page) => void; isAuthenticated?: boolea
       });
       return;
     }
-    
+
     setIsGeneratingOutfit(true);
-    
-    console.log('[handleGenerateOutfit] 开始生成穿搭建议');
-    
+
     try {
       const data = await getOutfitSuggestion();
-      console.log('[handleGenerateOutfit] 穿搭建议结果:', data);
       setOutfitData(data);
     } catch (error) {
-      console.error('[handleGenerateOutfit] 生成穿搭建议失败:', error);
       // 使用默认值，避免UI崩溃
       setOutfitData({
         colors: ["正红色", "亮金色"],

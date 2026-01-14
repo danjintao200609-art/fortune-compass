@@ -7,6 +7,7 @@ import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import * as auth from "./src/services/auth";
+import * as api from "./src/services/gemini";
 
 const App: React.FC = () => {
   // 认证状态
@@ -157,18 +158,9 @@ const App: React.FC = () => {
         return <Home
           config={userConfig}
           setConfig={setUserConfig}
-          onStart={async () => {
-            setIsLoading(true);
-            try {
-              const f = await api.generateFortune(userConfig, 'fengshui');
-              setFortune(f);
-              setCurrentPage(Page.RESULT);
-            } catch (e) {
-              console.error(e);
-              alert('获取运势失败，请检查后端服务');
-            } finally {
-              setIsLoading(false);
-            }
+          onStart={(result) => {
+            setFortune(result);
+            setCurrentPage(Page.RESULT);
           }}
           setIsLoading={setIsLoading}
           isLoading={isLoading}

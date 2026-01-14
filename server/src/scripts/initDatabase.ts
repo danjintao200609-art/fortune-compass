@@ -21,30 +21,25 @@ const initDatabase = async () => {
 
     console.log('✅ 用户表 (auth_users) 创建成功');
 
-    // 创建运势记录表
+    // 创建运势历史表 (fortune_history) - 匹配 controllers/fortuneController.ts
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS fortune_records (
-        id VARCHAR(50) PRIMARY KEY,
+      CREATE TABLE IF NOT EXISTS fortune_history (
+        id SERIAL PRIMARY KEY,
         user_id VARCHAR(50) REFERENCES auth_users(id),
-        fortune_type VARCHAR(50) NOT NULL,
-        fortune_content JSONB NOT NULL,
+        fortunetype VARCHAR(50) NOT NULL,
+        game_type VARCHAR(50) NOT NULL,
+        prediction_date VARCHAR(50) NOT NULL,
+        direction VARCHAR(10) NOT NULL,
+        summary TEXT NOT NULL,
+        lucky_color VARCHAR(50),
+        best_time VARCHAR(100),
+        energy_value VARCHAR(20),
+        lucky_numbers INTEGER[],
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
-    console.log('✅ 运势记录表 (fortune_records) 创建成功');
-
-    // 创建运势模板表
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS fortune_templates (
-        id VARCHAR(50) PRIMARY KEY,
-        fortune_type VARCHAR(50) NOT NULL,
-        template_content TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    console.log('✅ 运势模板表 (fortune_templates) 创建成功');
+    console.log('✅ 运势历史表 (fortune_history) 创建成功');
 
     // 创建个人资料表
     await pool.query(`
@@ -54,24 +49,13 @@ const initDatabase = async () => {
         signature TEXT,
         birthday DATE,
         gender TEXT CHECK (gender IN ('male', 'female', 'other')),
+        avatar_url TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
     console.log('✅ 个人资料表 (profiles) 创建成功');
-
-    // 创建初始运势模板数据
-    await pool.query(`
-      INSERT INTO fortune_templates (id, fortune_type, template_content)
-      VALUES
-        ('1', 'daily', '今天是你的幸运日，祝你一切顺利！'),
-        ('2', 'weekly', '本周你的运势整体不错，适合制定长期计划。'),
-        ('3', 'monthly', '本月你的事业运势较为稳定，注意保持良好的人际关系。')
-      ON CONFLICT (id) DO NOTHING;
-    `);
-
-    console.log('✅ 初始运势模板数据插入成功');
 
     console.log('🎉 数据库初始化完成！');
     process.exit(0);

@@ -3,6 +3,7 @@
         "target": "es2016",
         "module": "commonjs",
         "outDir": "./dist",
+        "rootDir": "../",
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
@@ -14,11 +15,11 @@
             ]
         }
     },
-    "include": ["src/**/*"],
+    "include": [
+        "src/**/*",
+        "../types.ts"
+    ],
     "exclude": [
-        "node_modules",
-        "src/controllers/profileController.ts",
-        "src/middleware/authMiddleware.ts",
-        "src/services/authService.ts"
+        "node_modules"
     ]
 }

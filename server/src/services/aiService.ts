@@ -15,10 +15,6 @@ export class DoubaoService implements AIService {
   constructor() {
     this.apiKey = process.env.DOUBAO_API_KEY || '';
     this.apiUrl = process.env.DOUBAO_API_URL || 'https://open.doubao.com/api/v1/chat/completions';
-    
-    if (!this.apiKey) {
-      console.warn('⚠️ DOUBAO_API_KEY is not set, will use fallback data');
-    }
   }
 
   // 生成运势
@@ -66,7 +62,7 @@ export class DoubaoService implements AIService {
 
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content;
-      
+
       if (!content) {
         throw new Error('Invalid response from Doubao API');
       }
@@ -179,7 +175,7 @@ export class DoubaoService implements AIService {
 
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content;
-      
+
       if (!content) {
         throw new Error('Invalid response from Doubao API');
       }
@@ -219,10 +215,6 @@ export class DeepSeekService implements AIService {
   constructor() {
     this.apiKey = process.env.DEEPSEEK_API_KEY || '';
     this.apiUrl = process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/v1/chat/completions';
-    
-    if (!this.apiKey) {
-      console.warn('⚠️ DEEPSEEK_API_KEY is not set, will use fallback data');
-    }
   }
 
   // 生成运势
@@ -270,7 +262,7 @@ export class DeepSeekService implements AIService {
 
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content;
-      
+
       if (!content) {
         throw new Error('Invalid response from DeepSeek API');
       }
@@ -383,7 +375,7 @@ export class DeepSeekService implements AIService {
 
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content;
-      
+
       if (!content) {
         throw new Error('Invalid response from DeepSeek API');
       }
@@ -418,9 +410,7 @@ export class DeepSeekService implements AIService {
 // AI服务工厂函数
 export const getAIService = (): AIService => {
   const serviceType = process.env.AI_SERVICE_TYPE || 'doubao';
-  
-  console.log(`🔄 使用AI服务: ${serviceType}`);
-  
+
   switch (serviceType.toLowerCase()) {
     case 'deepseek':
       return new DeepSeekService();
