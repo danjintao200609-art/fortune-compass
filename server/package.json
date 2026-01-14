@@ -2,11 +2,14 @@
     "name": "fortune-compass-server",
     "version": "1.0.0",
     "description": "Backend for Fortune Compass",
-    "main": "dist/app.js",
+    "main": "index.js",
     "scripts": {
-        "start": "node dist/app.js",
+        "start": "node index.js",
         "dev": "tsx watch src/app.ts",
         "build": "tsc"
+    },
+    "engines": {
+        "node": ">=18.0.0"
     },
     "dependencies": {
         "@types/pg": "^8.16.0",

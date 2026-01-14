@@ -1,10 +1,9 @@
 {
   "build": {
-    "command": "npm install && npm run build",
-    "output_dir": "dist"
+    "command": "npm install && npm run build"
   },
   "run": {
-    "command": "node dist/app.js",
+    "command": "node index.js",
     "port": 3001
   },
   "runtime": "node20",
