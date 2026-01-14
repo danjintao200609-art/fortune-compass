@@ -3,23 +3,19 @@
         "target": "es2016",
         "module": "commonjs",
         "outDir": "./dist",
-        "rootDir": "../",
+        "rootDir": "./src",
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "baseUrl": ".",
-        "paths": {
-            "@/types": [
-                "../types"
-            ]
-        }
+        "resolveJsonModule": true,
+        "declaration": true
     },
     "include": [
-        "src/**/*",
-        "../types.ts"
+        "src/**/*"
     ],
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "dist"
     ]
 }

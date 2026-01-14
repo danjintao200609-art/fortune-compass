@@ -1,4 +1,4 @@
-import { UserConfig, FortuneMode, FortuneResult } from '../../../types';
+import { UserConfig, FortuneMode, FortuneResult } from '../types';
 
 // 定义AI服务接口
 export interface AIService {
