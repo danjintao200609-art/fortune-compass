@@ -7,8 +7,9 @@
     "command": "npm run preview",
     "port": 4173
   },
+  "runtime": "static",
   "env": {
-    "VITE_API_URL": "https://fortune-compasshou.zeabur.app/api",
+    "VITE_API_URL": "https://fortune-compasshou.zeabur.app",
     "VITE_LAF_APP_ID": "",
     "LAF_APP_ID": "",
     "LAF_SERVICE_KEY": "",

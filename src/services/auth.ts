@@ -18,14 +18,14 @@ export interface LoginData {
 }
 
 const getApiBase = (): string => {
-    let envApiUrl = import.meta.env.VITE_API_URL;
+    const envApiUrl = import.meta.env.VITE_API_URL;
     if (envApiUrl) {
-        if (envApiUrl.endsWith('/')) envApiUrl = envApiUrl.slice(0, -1);
-        // Ensure /api suffix for absolute URLs if missing
-        if (envApiUrl.startsWith('http') && !envApiUrl.endsWith('/api')) {
-            envApiUrl += '/api';
-        }
-        return envApiUrl;
+        let url = envApiUrl.toString();
+        // 移除末尾斜杠
+        if (url.endsWith('/')) url = url.slice(0, -1);
+        // 确保以 /api 结尾
+        if (!url.endsWith('/api')) url += '/api';
+        return url;
     }
     return '/api';
 };
